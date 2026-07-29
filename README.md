@@ -67,9 +67,6 @@ FarmConnect is a lightweight web application that helps farmers list available p
 - As a **farmer**, I want to **upload a photo of produce**, so that **buyers can understand the quality of produce**.
 **Done when:** farmers upload photos, buyers can see the photos.
 
-- As a **manager**, I want **to update prices of produce**.
-**Done when:** update the price of a produce, price reflects in farmers and buyers dashboard.
-
 
 ## **4. Scope**
 
