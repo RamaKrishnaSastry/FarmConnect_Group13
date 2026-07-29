@@ -5,7 +5,7 @@
 
 ## **1. Vision**
 
-FarmConnect is a lightweight web application that helps farmers list available produce, buyers place purchase requests, and transporters manage delivery tasks. It replaces scattered phone calls and manual coordination with a clean, structured workflow. This is a success if a user can list produce, a buyer can request it, and a transporter can complete the delivery.
+FarmConnect is a lightweight web application that helps farmers list available produce, buyers place purchase requests, and transporters manage delivery tasks. It replaces scattered phone calls and[...]
 
 ## **2. Users**
 ### 1. Farmer
@@ -206,9 +206,37 @@ Only one transporter can accept a task.
 
 ## About the implementation
 
-The app allows farmers to list available produce, including basic details such as name, quantity, and price. This gives farmers a clear, organized way to present what they have for sale. Buyers can browse these listings and submit purchase requests directly through the app, ensuring they always see up‑to‑date availability and can track the status of their orders. Once a farmer approves a request, transporters gain access to the delivery task, allowing them to accept it and mark it as completed once the produce has been delivered.
+The app allows farmers to list available produce, including basic details such as name, quantity, and price. This gives farmers a clear, organized way to present what they have for sale. Buyers c[...]
 
 ---
 
 
 
+
+## Flowchart
+
+```mermaid
+flowchart TD
+    User[User Login] --> Auth[Authentication]
+    Auth --> Role{Role}
+    
+    Role --> Farmer
+    Role --> Buyer
+    Role --> Transporter
+    
+    Farmer -->|Create/Edit Produce| ProduceDB[(Produce)]
+    Buyer -->|Browse| ProduceDB
+    
+    Buyer -->|Create Request| RequestDB[(Purchase Requests)]
+    
+    RequestDB --> Farmer
+    Farmer -->|Approve/Reject| RequestDB
+    
+    RequestDB -->|Approved Only| Transporter
+    
+    Transporter -->|Accept Task| RequestDB
+    Transporter -->|Complete Delivery| RequestDB
+    
+    RequestDB --> Buyer
+    RequestDB --> Farmer
+```
