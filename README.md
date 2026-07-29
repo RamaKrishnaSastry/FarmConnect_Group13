@@ -4,8 +4,7 @@
 
 
 ## **1. Vision**
-
-FarmConnect is a lightweight web application that helps farmers list available produce, buyers place purchase requests, and transporters manage delivery tasks. It replaces scattered phone calls and[...]
+FarmConnect is a lightweight web application that helps farmers list available produce, buyers place purchase requests, and transporters manage delivery tasks. It replaces scattered phone calls and manual coordination with a clean, structured workflow. This is a success if a user can list produce, a buyer can request it, and a transporter can complete the delivery.
 
 ## **2. Users**
 ### 1. Farmer
