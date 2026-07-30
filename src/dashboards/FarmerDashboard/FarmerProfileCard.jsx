@@ -37,7 +37,7 @@ export const FarmerProfileCard = () => {
               <p className="text-gray-900 font-semibold">{user.longitude}</p>
             </div>
           </div>
-          <button className="w-full mt-4 bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg transition">
+          <button className="mt-4 w-full rounded-lg bg-green-700 px-4 py-2 text-white transition hover:bg-green-800">
             Edit Profile
           </button>
         </div>

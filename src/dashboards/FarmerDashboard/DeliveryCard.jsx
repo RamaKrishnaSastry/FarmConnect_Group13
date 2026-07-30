@@ -13,7 +13,7 @@ export const DeliveryCard = ({ delivery }) => {
   };
 
   return (
-    <Card className={`border-2 ${getStatusColor(delivery.status)} hover:shadow-lg transition`}>
+    <Card className={`border ${getStatusColor(delivery.status)} transition hover:shadow-lg`}>
       <CardHeader
         title={`🚚 ${delivery.transporter_name}`}
         action={<StatusBadge status={delivery.status} />}

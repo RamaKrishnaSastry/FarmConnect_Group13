@@ -26,18 +26,18 @@ export const BuyerRequestList = ({ requests, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
         <h2 className="text-2xl font-bold text-gray-900">Buyer Requests</h2>
-        <p className="text-gray-600">
+        <p className="mt-1 text-sm text-gray-600">
           {requests.length} total • {pendingCount} pending • {approvedCount} approved
         </p>
       </div>
 
       {requests.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-4xl mb-2">📋</p>
-          <p className="text-gray-600 font-medium">No buyer requests yet</p>
-          <p className="text-gray-500 text-sm mt-1">Buyers will start requesting your produce when you add listings</p>
+        <div className="rounded-2xl border border-dashed border-green-200 bg-green-50/50 py-12 text-center">
+          <p className="mb-2 text-4xl">📋</p>
+          <p className="font-medium text-gray-700">No buyer requests yet</p>
+          <p className="mt-1 text-sm text-gray-500">Buyers will start requesting your produce when you add listings</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

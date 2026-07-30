@@ -20,6 +20,15 @@ export const deleteProduceListing = async (produceId) => {
   return data;
 };
 
+export const uploadProducePhoto = async (produceId, file) => {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const { data } = await axiosClient.post(`/produce/${produceId}/photos`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};
+
 export const getPurchaseRequests = async (farmerId) => {
   const { data } = await axiosClient.get(`/requests/${farmerId}`);
   return data;

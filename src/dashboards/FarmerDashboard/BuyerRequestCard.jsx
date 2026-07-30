@@ -33,23 +33,23 @@ export const BuyerRequestCard = ({ request, onApprove, onReject }) => {
       <CardBody>
         <div className="space-y-4">
           {/* Quantity */}
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Quantity Requested</p>
-            <p className="text-2xl font-bold text-blue-900">{request.requested_quantity} units</p>
+          <div className="rounded-xl border border-green-100 bg-green-50/70 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Quantity Requested</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{request.requested_quantity} units</p>
           </div>
 
           {/* Price */}
-          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <p className="text-xs text-green-600 font-semibold uppercase tracking-wide">Offered Price</p>
-            <p className="text-2xl font-bold text-green-900">${request.offered_price}</p>
-            <p className="text-xs text-green-700 mt-1">≈ ${(request.offered_price / request.requested_quantity).toFixed(2)} per unit</p>
+          <div className="rounded-xl border border-emerald-100 bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Offered Price</p>
+            <p className="mt-1 text-2xl font-bold text-green-700">${request.offered_price}</p>
+            <p className="mt-1 text-xs text-gray-500">≈ ${(request.offered_price / request.requested_quantity).toFixed(2)} per unit</p>
           </div>
 
           {/* Buyer Note */}
           {request.buyer_note && (
-            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-              <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide">Note</p>
-              <p className="text-gray-900 text-sm mt-1">"<em>{request.buyer_note}</em>"</p>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Note</p>
+              <p className="mt-1 text-sm text-gray-900">“{request.buyer_note}”</p>
             </div>
           )}
 
@@ -66,14 +66,14 @@ export const BuyerRequestCard = ({ request, onApprove, onReject }) => {
             <button
               onClick={handleApprove}
               disabled={loading}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg font-semibold text-sm transition shadow-md hover:shadow-lg"
+              className="flex-1 rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:bg-gray-300"
             >
               {loading ? '⏳' : '✓'} Approve
             </button>
             <button
               onClick={handleReject}
               disabled={loading}
-              className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg font-semibold text-sm transition shadow-md hover:shadow-lg"
+              className="flex-1 rounded-lg bg-gray-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:bg-gray-300"
             >
               {loading ? '⏳' : '✕'} Reject
             </button>

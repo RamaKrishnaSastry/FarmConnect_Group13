@@ -12,6 +12,7 @@ export const AddProduceForm = ({ onClose, onSuccess, editProduce }) => {
   });
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,12 +40,17 @@ export const AddProduceForm = ({ onClose, onSuccess, editProduce }) => {
         price_per_unit: parseFloat(formData.price_per_unit),
       };
 
+      let produceResult;
       if (editProduce) {
-        await farmerApi.updateProduceListing(editProduce.id, payload);
+        produceResult = await farmerApi.updateProduceListing(editProduce.id, payload);
         setSuccessMsg('✅ Produce updated successfully!');
       } else {
-        await farmerApi.addProduceListing(payload);
+        produceResult = await farmerApi.addProduceListing(payload);
         setSuccessMsg('✅ Produce added successfully!');
+      }
+
+      if (photoFile && produceResult?.id) {
+        await farmerApi.uploadProducePhoto(produceResult.id, photoFile);
       }
       if (onSuccess) onSuccess();
       setTimeout(() => {
@@ -141,6 +147,18 @@ export const AddProduceForm = ({ onClose, onSuccess, editProduce }) => {
           className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 outline-none transition disabled:opacity-50"
           placeholder="0.00"
         />
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-bold text-gray-700">Upload Photo</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+          disabled={loading}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        />
+        <p className="mt-1 text-xs text-gray-500">Optional. Photos will appear on your produce cards once uploaded.</p>
       </div>
 
       <div className="flex gap-3 pt-4">

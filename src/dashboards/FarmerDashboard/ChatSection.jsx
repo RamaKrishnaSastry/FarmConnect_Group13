@@ -65,9 +65,9 @@ export const ChatSection = ({ requests }) => {
                 <button
                   key={req.id}
                   onClick={() => setSelectedRequest(req.id)}
-                  className={`w-full text-left px-3 py-2 rounded transition ${
+                  className={`w-full rounded-lg px-3 py-2 text-left transition ${
                     selectedRequest === req.id
-                      ? 'bg-primary text-white'
+                      ? 'bg-green-700 text-white'
                       : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
@@ -103,9 +103,9 @@ export const ChatSection = ({ requests }) => {
                           className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-xs px-3 py-2 rounded-lg ${
+                            className={`max-w-xs rounded-lg px-3 py-2 ${
                               isMine
-                                ? 'bg-primary text-white'
+                                ? 'bg-green-700 text-white'
                                 : 'bg-gray-100 text-gray-900'
                             }`}
                           >
@@ -142,7 +142,7 @@ export const ChatSection = ({ requests }) => {
                   <button
                     type="submit"
                     disabled={sending || !newMessage.trim()}
-                    className="bg-primary hover:bg-secondary disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition"
+                    className="rounded-lg bg-green-700 px-4 py-2 text-white transition hover:bg-green-800 disabled:bg-gray-300"
                   >
                     {sending ? 'Sending...' : 'Send'}
                   </button>

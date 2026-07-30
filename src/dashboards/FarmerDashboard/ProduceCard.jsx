@@ -18,9 +18,9 @@ export const ProduceCard = ({ produce, onEdit, onDelete }) => {
   };
 
   return (
-    <Card className="flex flex-col h-full hover:shadow-lg transition border border-gray-200 overflow-hidden">
+    <Card className="flex h-full flex-col overflow-hidden border border-green-100 transition hover:shadow-lg">
       {/* Image */}
-      <div className="mb-4 h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden relative">
+      <div className="relative mb-4 h-40 overflow-hidden rounded-xl bg-gradient-to-br from-green-100 to-emerald-50">
         {produce.photos && produce.photos.length > 0 ? (
           <img
             src={produce.photos[0].url}
@@ -39,14 +39,14 @@ export const ProduceCard = ({ produce, onEdit, onDelete }) => {
       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{produce.description}</p>
 
       {/* Details */}
-      <div className="grid grid-cols-2 gap-3 mb-4 text-sm bg-gray-50 p-3 rounded-lg">
+      <div className="mb-4 grid grid-cols-2 gap-3 rounded-xl border border-green-100 bg-green-50/70 p-3 text-sm">
         <div>
-          <p className="text-gray-600 text-xs uppercase tracking-wide">Quantity</p>
-          <p className="font-bold text-gray-900">{produce.quantity} {produce.unit}</p>
+          <p className="text-xs uppercase tracking-wide text-gray-600">Quantity</p>
+          <p className="font-semibold text-gray-900">{produce.quantity} {produce.unit}</p>
         </div>
         <div>
-          <p className="text-gray-600 text-xs uppercase tracking-wide">Price</p>
-          <p className="font-bold text-green-600">${produce.price_per_unit}</p>
+          <p className="text-xs uppercase tracking-wide text-gray-600">Price</p>
+          <p className="font-semibold text-green-700">${produce.price_per_unit}</p>
         </div>
       </div>
 
@@ -57,17 +57,17 @@ export const ProduceCard = ({ produce, onEdit, onDelete }) => {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 mt-auto">
+      <div className="mt-auto flex gap-2">
         <button
           onClick={() => onEdit && onEdit(produce.id)}
-          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm hover:shadow"
+          className="flex-1 rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-800"
         >
           ✏️ Edit
         </button>
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm hover:shadow"
+          className="flex-1 rounded-lg bg-gray-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:bg-gray-300"
         >
           {isDeleting ? '...' : '🗑️ Delete'}
         </button>

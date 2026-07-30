@@ -4,6 +4,21 @@ export const ROLES = {
   TRANSPORTER: 'TRANSPORTER',
 };
 
+export const normalizeRole = (role) => role?.toUpperCase?.() || '';
+
+export const getDashboardPath = (role) => {
+  switch (normalizeRole(role)) {
+    case ROLES.FARMER:
+      return '/dashboard/farmer';
+    case ROLES.BUYER:
+      return '/dashboard/buyer';
+    case ROLES.TRANSPORTER:
+      return '/dashboard/transporter';
+    default:
+      return '/dashboard';
+  }
+};
+
 export const STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',

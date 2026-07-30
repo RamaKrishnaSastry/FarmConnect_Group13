@@ -1,49 +1,37 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-
-const FARMER_CREDENTIALS = {
-  email: 'farmer@farmconnect.com',
-  password: 'password',
-};
-
-const LOGIN_USER = {
-  id: 1, full_name: 'John Farmer', email: 'farmer@farmconnect.com',
-  role: 'FARMER', phone: '555-1234', address: '123 Farm Lane',
-  city: 'Springfield', state: 'IL', latitude: 39.7817, longitude: -89.6501,
-};
+import { getDashboardPath } from '../utils/constants';
 
 export const LoginPage = () => {
-  const { setUser } = useAuth();
+  const { login, loading, error: authError } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
-    if (
-      email === FARMER_CREDENTIALS.email &&
-      password === FARMER_CREDENTIALS.password
-    ) {
-      setUser(LOGIN_USER);
-      navigate('/dashboard', { replace: true });
-    } else {
-      setError('Invalid email or password. Try farmer@farmconnect.com / password');
+    try {
+      const user = await login(email, password);
+      navigate(getDashboardPath(user?.role), { replace: true });
+    } catch {
+      // Error is already surfaced through the auth context
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-green-700 mb-2">FarmConnect</h1>
-        <p className="text-center text-gray-500 mb-6">Farmer Login</p>
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#f6fff7_0%,#eef8ee_100%)] px-4">
+      <div className="w-full max-w-md rounded-2xl border border-green-100 bg-white/95 p-8 shadow-xl">
+        <div className="mb-6 text-center">
+          <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-700 text-2xl text-white">🌾</div>
+          <h1 className="text-3xl font-bold text-green-800">FarmConnect</h1>
+          <p className="mt-2 text-sm text-gray-500">Sign in to your dashboard</p>
+        </div>
 
-        {error && (
+        {authError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-            {error}
+            {authError}
           </div>
         )}
 
@@ -55,7 +43,7 @@ export const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="farmer@farmconnect.com"
+              placeholder="you@example.com"
               required
             />
           </div>
@@ -72,15 +60,12 @@ export const LoginPage = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition font-medium"
+            disabled={loading}
+            className="w-full rounded-lg bg-green-700 px-4 py-2 font-medium text-white transition hover:bg-green-800 disabled:opacity-60"
           >
-            Login
+            {loading ? 'Signing in...' : 'Login'}
           </button>
         </form>
-
-        <p className="text-xs text-gray-400 text-center mt-4">
-          Demo: farmer@farmconnect.com / password
-        </p>
       </div>
     </div>
   );

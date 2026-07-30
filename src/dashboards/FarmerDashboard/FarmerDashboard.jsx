@@ -65,34 +65,31 @@ export const FarmerDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl p-8 shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">Welcome to Your Farm Dashboard 🌾</h1>
-        <p className="text-green-100">Manage your produce, track deliveries, and connect with buyers</p>
+      <div className="rounded-2xl bg-gradient-to-r from-green-700 to-green-600 p-8 text-white shadow-sm">
+        <h1 className="text-2xl font-semibold">Farmer Dashboard</h1>
+        <p className="mt-2 text-sm text-green-50">Manage your produce, track deliveries, and connect with buyers.</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className={`${stat.color} border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition`}>
-            <div className="text-3xl mb-2">{stat.icon}</div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
+          <div key={stat.label} className={`${stat.color} rounded-2xl border border-green-100 p-6 shadow-sm transition hover:shadow-md`}>
+            <div className="mb-2 text-3xl">{stat.icon}</div>
+            <div className="mb-1 text-3xl font-bold text-gray-900">{stat.value}</div>
             <div className="text-sm text-gray-600">{stat.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="bg-white rounded-lg shadow border border-gray-200">
+      <div className="rounded-2xl border border-green-100 bg-white shadow-sm">
         <div className="flex overflow-x-auto border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition border-b-2 ${
+              className={`whitespace-nowrap border-b-2 px-6 py-4 text-sm font-medium transition ${
                 activeTab === tab.id
-                  ? 'border-green-600 text-green-600 bg-green-50'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'border-green-600 bg-green-50 text-green-700'
+                  : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               {tab.label}
@@ -100,23 +97,22 @@ export const FarmerDashboard = () => {
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <FarmerProfileCard />
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900">📈 Quick Stats</h3>
+              <div className="rounded-2xl border border-green-100 bg-green-50/60 p-6">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">📈 Quick Stats</h3>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Total Sales</span>
-                    <span className="font-bold text-green-600">$2,450</span>
+                    <span className="font-bold text-green-700">$2,450</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Completed Orders</span>
-                    <span className="font-bold text-blue-600">12</span>
+                    <span className="font-bold text-blue-700">12</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
+                  <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Buyer Rating</span>
                     <span className="font-bold text-yellow-600">4.8/5 ⭐</span>
                   </div>

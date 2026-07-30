@@ -1,12 +1,18 @@
+import os
+from uuid import uuid4
 import pymysql
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from config import DB_CONFIG
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads', 'produce')
 CORS(app, supports_credentials=True)
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 FARMER_ID = 1
 
@@ -19,18 +25,26 @@ def index():
         'endpoints': [
             'POST /api/auth/login',
             'GET /api/auth/me',
+            'GET /api/seed',
             'GET /api/produce/<farmer_id>',
             'POST /api/produce',
-            'PUT /api/produce/<id>',
-            'DELETE /api/produce/<id>',
+            'PUT /api/produce/<produce_id>',
+            'DELETE /api/produce/<produce_id>',
             'GET /api/requests/<farmer_id>',
-            'PUT /api/requests/<id>/approve',
-            'PUT /api/requests/<id>/reject',
+            'PUT /api/requests/<request_id>/approve',
+            'PUT /api/requests/<request_id>/reject',
             'GET /api/deliveries/<farmer_id>',
             'GET /api/ratings/<farmer_id>',
             'GET /api/chat/<request_id>',
             'POST /api/chat',
-            'GET /api/seed',
+            'GET /api/buyer/dashboard/<buyer_id>',
+            'POST /api/buyer/requests',
+            'GET /api/buyer/requests/<buyer_id>',
+            'PUT /api/buyer/requests/<request_id>',
+            'GET /api/transporter/dashboard/<transporter_id>',
+            'PUT /api/transporter/deliveries/<delivery_id>/accept',
+            'GET /api/transporter/deliveries/<transporter_id>',
+            'PUT /api/transporter/deliveries/<delivery_id>/status',
         ],
     })
 
@@ -142,16 +156,20 @@ def login():
 
 @app.route('/api/auth/me', methods=['GET'])
 def get_me():
+    user_id = request.args.get('user_id') or request.headers.get('X-User-Id')
+    if not user_id:
+        return jsonify({'message': 'User id is required'}), 400
+
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT * FROM users WHERE user_id = %s', (FARMER_ID,))
+            cur.execute('SELECT * FROM users WHERE user_id = %s', (user_id,))
             user = cur.fetchone()
     finally:
         conn.close()
     if not user:
         return jsonify({'message': 'User not found'}), 404
-    return jsonify(map_user(user))
+    return jsonify({'user': map_user(user)})
 
 
 # ===== PRODUCE =====
@@ -195,6 +213,33 @@ def add_produce():
     finally:
         conn.close()
     return jsonify(map_produce(row)), 201
+
+
+@app.route('/api/produce/<int:produce_id>/photos', methods=['POST'])
+def upload_produce_photo(produce_id):
+    file = request.files.get('photo')
+    if not file or not file.filename:
+        return jsonify({'message': 'A photo file is required'}), 400
+
+    ext = os.path.splitext(file.filename)[1].lower() or '.jpg'
+    filename = f"{produce_id}_{uuid4().hex}{ext}"
+    save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(save_path)
+
+    photo_url = f"/static/uploads/produce/{filename}"
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'INSERT INTO produce_photos (produce_id, photo_url) VALUES (%s, %s)',
+                (produce_id, photo_url),
+            )
+            conn.commit()
+            photo_id = cur.lastrowid
+    finally:
+        conn.close()
+
+    return jsonify({'id': photo_id, 'url': photo_url}), 201
 
 
 @app.route('/api/produce/<int:produce_id>', methods=['PUT'])
@@ -306,7 +351,249 @@ def get_deliveries(farmer_id):
     return jsonify([map_delivery(r) for r in rows])
 
 
+# ===== BUYER DASHBOARD =====
+@app.route('/api/buyer/dashboard/<int:buyer_id>', methods=['GET'])
+def get_buyer_dashboard(buyer_id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''SELECT pl.*, u.full_name AS farmer_name
+                   FROM produce_listings pl
+                   JOIN users u ON u.user_id = pl.farmer_id
+                   WHERE pl.status IS NULL OR pl.status <> 'SOLD'
+                   ORDER BY pl.created_at DESC''',
+            )
+            produce_rows = cur.fetchall()
+
+            cur.execute(
+                '''SELECT pr.*, pl.name AS produce_name, u.full_name AS farmer_name
+                   FROM purchase_requests pr
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users u ON u.user_id = pl.farmer_id
+                   WHERE pr.buyer_id = %s
+                   ORDER BY pr.requested_at DESC''',
+                (buyer_id,),
+            )
+            request_rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    return jsonify({
+        'availableProduce': [map_produce(row) for row in produce_rows],
+        'myRequests': [map_request(row) for row in request_rows],
+    })
+
+
+@app.route('/api/buyer/requests', methods=['POST'])
+def create_buyer_request():
+    data = request.get_json()
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note)
+                   VALUES (%s, %s, %s, %s, 'PENDING', %s)''',
+                (data.get('produce_id'), data.get('buyer_id'), data.get('requested_quantity'), data.get('offered_price'), data.get('buyer_note', '')),
+            )
+            conn.commit()
+            cur.execute('SELECT * FROM purchase_requests WHERE request_id = %s', (cur.lastrowid,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    return jsonify(map_request(row) if row else {'message': 'Not found'}), 201
+
+
+@app.route('/api/buyer/requests/<int:buyer_id>', methods=['GET'])
+def get_buyer_requests(buyer_id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''SELECT pr.*, pl.name AS produce_name, pl.farmer_id AS farmer_id, u.full_name AS farmer_name
+                   FROM purchase_requests pr
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users u ON u.user_id = pl.farmer_id
+                   WHERE pr.buyer_id = %s
+                   ORDER BY pr.requested_at DESC''',
+                (buyer_id,),
+            )
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+    return jsonify([map_request(r) for r in rows])
+
+
+@app.route('/api/buyer/requests/<int:request_id>', methods=['PUT'])
+def update_buyer_request(request_id):
+    data = request.get_json() or {}
+    status = (data.get('status') or '').upper()
+    allowed_statuses = {'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'}
+    if status not in allowed_statuses:
+        return jsonify({'message': 'Invalid status'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE purchase_requests SET status = %s WHERE request_id = %s", (status, request_id))
+            conn.commit()
+            cur.execute(
+                '''SELECT pr.*, pl.name AS produce_name, u.full_name AS farmer_name
+                   FROM purchase_requests pr
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users u ON u.user_id = pl.farmer_id
+                   WHERE pr.request_id = %s''',
+                (request_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    return jsonify(map_request(row) if row else {'message': 'Not found'}), (200 if row else 404)
+
+
+# ===== TRANSPORTER DASHBOARD =====
+@app.route('/api/transporter/dashboard/<int:transporter_id>', methods=['GET'])
+def get_transporter_dashboard(transporter_id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''SELECT d.*, pr.buyer_id, b.full_name AS buyer_name, pl.name AS produce_name, f.full_name AS farmer_name
+                   FROM deliveries d
+                   JOIN purchase_requests pr ON pr.request_id = d.request_id
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users b ON b.user_id = pr.buyer_id
+                   JOIN users f ON f.user_id = pl.farmer_id
+                   WHERE d.transporter_id IS NULL
+                   ORDER BY d.created_at DESC''',
+            )
+            available_rows = cur.fetchall()
+
+            cur.execute(
+                '''SELECT d.*, pr.buyer_id, b.full_name AS buyer_name, pl.name AS produce_name, f.full_name AS farmer_name
+                   FROM deliveries d
+                   JOIN purchase_requests pr ON pr.request_id = d.request_id
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users b ON b.user_id = pr.buyer_id
+                   JOIN users f ON f.user_id = pl.farmer_id
+                   WHERE d.transporter_id = %s
+                   ORDER BY d.created_at DESC''',
+                (transporter_id,),
+            )
+            my_rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    return jsonify({
+        'availableDeliveries': [map_delivery(row) for row in available_rows],
+        'myDeliveries': [map_delivery(row) for row in my_rows],
+    })
+
+
+@app.route('/api/transporter/deliveries/<int:delivery_id>/accept', methods=['PUT'])
+def accept_delivery(delivery_id):
+    data = request.get_json() or {}
+    transporter_id = data.get('transporter_id')
+    if not transporter_id:
+        return jsonify({'message': 'transporter_id is required'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE deliveries SET transporter_id = %s, status = 'IN_TRANSIT' WHERE delivery_id = %s",
+                (transporter_id, delivery_id),
+            )
+            conn.commit()
+            cur.execute('SELECT * FROM deliveries WHERE delivery_id = %s', (delivery_id,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    return jsonify(map_delivery(row) if row else {'message': 'Not found'}), (200 if row else 404)
+
+
+@app.route('/api/transporter/deliveries/<int:transporter_id>', methods=['GET'])
+def get_transporter_deliveries(transporter_id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''SELECT d.*, pr.buyer_id, b.full_name AS buyer_name, pl.name AS produce_name, f.full_name AS farmer_name
+                   FROM deliveries d
+                   JOIN purchase_requests pr ON pr.request_id = d.request_id
+                   JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+                   JOIN users b ON b.user_id = pr.buyer_id
+                   JOIN users f ON f.user_id = pl.farmer_id
+                   WHERE d.transporter_id = %s
+                   ORDER BY d.created_at DESC''',
+                (transporter_id,),
+            )
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+    return jsonify([map_delivery(r) for r in rows])
+
+
+@app.route('/api/transporter/deliveries/<int:delivery_id>/status', methods=['PUT'])
+def update_transporter_delivery_status(delivery_id):
+    data = request.get_json() or {}
+    status = (data.get('status') or '').upper()
+    allowed_statuses = {'PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'}
+    if status not in allowed_statuses:
+        return jsonify({'message': 'Invalid status'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE deliveries SET status = %s WHERE delivery_id = %s", (status, delivery_id))
+            conn.commit()
+            cur.execute('SELECT * FROM deliveries WHERE delivery_id = %s', (delivery_id,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    return jsonify(map_delivery(row) if row else {'message': 'Not found'}), (200 if row else 404)
+
+
 # ===== RATINGS =====
+@app.route('/api/ratings', methods=['POST'])
+def submit_rating():
+    data = request.get_json() or {}
+    request_id = data.get('request_id')
+    buyer_id = data.get('buyer_id')
+    rated_user_id = data.get('rated_user_id')
+    rating_type = (data.get('rating_type') or '').upper()
+    rating = data.get('rating')
+    review = data.get('review')
+
+    if rating_type not in {'PRODUCT', 'DELIVERY'}:
+        return jsonify({'message': 'Invalid rating type'}), 400
+    if not isinstance(rating, int) or rating < 1 or rating > 5:
+        return jsonify({'message': 'Rating must be between 1 and 5'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT rating_id FROM ratings WHERE request_id = %s AND rating_type = %s',
+                (request_id, rating_type),
+            )
+            if cur.fetchone():
+                return jsonify({'message': 'You have already rated this request'}), 409
+
+            cur.execute(
+                '''INSERT INTO ratings (request_id, buyer_id, rated_user_id, rating_type, rating, review)
+                   VALUES (%s, %s, %s, %s, %s, %s)''',
+                (request_id, buyer_id, rated_user_id, rating_type, rating, review),
+            )
+            conn.commit()
+            cur.execute('SELECT * FROM ratings WHERE rating_id = %s', (cur.lastrowid,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    return jsonify(map_rating(row) if row else {'message': 'Not found'}), 201
+
+
 @app.route('/api/ratings/<int:farmer_id>', methods=['GET'])
 def get_ratings(farmer_id):
     conn = get_db()
@@ -387,6 +674,7 @@ def map_produce(p):
         'quantity': float(p['quantity']), 'unit': p['unit'],
         'price_per_unit': float(p['price_per_unit']),
         'status': p['status'].lower() if p.get('status') else 'available',
+        'farmer_name': p.get('farmer_name', ''),
         'created_at': str(p.get('created_at', '')), 'updated_at': str(p.get('updated_at', '')),
     }
 
@@ -395,6 +683,8 @@ def map_request(r):
     return {
         'id': r['request_id'], 'produce_id': r['produce_id'],
         'buyer_id': r['buyer_id'], 'buyer_name': r.get('buyer_name', ''),
+        'produce_name': r.get('produce_name', ''), 'farmer_name': r.get('farmer_name', ''),
+        'farmer_id': r.get('farmer_id'),
         'requested_quantity': float(r['requested_quantity']),
         'offered_price': float(r['offered_price']) if r.get('offered_price') else None,
         'status': r['status'].lower(), 'buyer_note': r.get('buyer_note'),
@@ -407,6 +697,7 @@ def map_delivery(d):
         'id': d['delivery_id'], 'request_id': d['request_id'],
         'transporter_id': d.get('transporter_id'),
         'transporter_name': d.get('transporter_name', ''),
+        'buyer_name': d.get('buyer_name', ''), 'produce_name': d.get('produce_name', ''), 'farmer_name': d.get('farmer_name', ''),
         'status': d['status'].lower(),
         'pickup_address': d.get('pickup_address'),
         'delivery_address': d.get('delivery_address'),

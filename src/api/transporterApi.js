@@ -1,16 +1,22 @@
+import axiosClient from './axiosClient';
+
 // Transporter API endpoints
-export const getAvailableDeliveries = async () => {
-  return [];
+export const getAvailableDeliveries = async (transporterId) => {
+  const { data } = await axiosClient.get(`/transporter/dashboard/${transporterId}`);
+  return data.availableDeliveries || [];
 };
 
-export const acceptDelivery = async (deliveryId) => {
-  return { success: true };
+export const acceptDelivery = async (deliveryId, transporterId) => {
+  const { data } = await axiosClient.put(`/transporter/deliveries/${deliveryId}/accept`, { transporter_id: transporterId });
+  return data;
 };
 
 export const updateDeliveryStatus = async (deliveryId, status) => {
-  return { success: true };
+  const { data } = await axiosClient.put(`/transporter/deliveries/${deliveryId}/status`, { status });
+  return data;
 };
 
 export const getMyDeliveries = async (transporterId) => {
-  return [];
+  const { data } = await axiosClient.get(`/transporter/dashboard/${transporterId}`);
+  return data.myDeliveries || [];
 };
