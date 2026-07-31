@@ -1,7 +1,7 @@
-import mysql.connector
+import pymysql
 from config import Config
 
-conn = mysql.connector.connect(
+conn = pymysql.connect(
     host=Config.DB_HOST, user=Config.DB_USER,
     password=Config.DB_PASSWORD, database=Config.DB_NAME
 )

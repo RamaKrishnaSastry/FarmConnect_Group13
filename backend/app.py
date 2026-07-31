@@ -6,6 +6,7 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from config import DB_CONFIG
+from modules.auth import AuthService
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -23,6 +24,7 @@ def index():
         'status': 'ok',
         'message': 'FarmConnect API is running',
         'endpoints': [
+            'POST /api/auth/register',
             'POST /api/auth/login',
             'GET /api/auth/me',
             'GET /api/seed',
@@ -135,6 +137,36 @@ def seed():
 
 
 # ===== AUTH =====
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json(silent=True) or {}
+
+    email = (data.get('email') or '').strip().lower()
+    success, message = AuthService.register_user(
+        full_name=(data.get('full_name') or '').strip(),
+        email=email,
+        password=data.get('password') or '',
+        role=(data.get('role') or '').upper(),
+        phone=data.get('phone'),
+        address=data.get('address'),
+        city=data.get('city'),
+        state=data.get('state'),
+        latitude=data.get('latitude'),
+        longitude=data.get('longitude'),
+    )
+    if not success:
+        return jsonify({'message': message}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM users WHERE email = %s', (email,))
+            user = cur.fetchone()
+    finally:
+        conn.close()
+    return jsonify({'user': map_user(user)}), 201
+
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     data = request.get_json()

@@ -1,22 +1,20 @@
-import bcrypt
 import re
 from modules.db import Database
-from flask import jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 class AuthService:
     """Authentication service for user registration and login"""
 
     @staticmethod
     def hash_password(password):
-        """Hash password using bcrypt"""
-        salt = bcrypt.gensalt(rounds=12)
-        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed.decode('utf-8')
+        """Hash password using werkzeug (consistent with app.py)"""
+        return generate_password_hash(password)
 
     @staticmethod
     def verify_password(password, hashed_password):
         """Verify password against hash"""
-        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+        return check_password_hash(hashed_password, password)
 
     @staticmethod
     def validate_email(email):
@@ -39,7 +37,7 @@ class AuthService:
 
     @staticmethod
     def validate_coordinates(latitude, longitude):
-        """Validate location coordinates"""
+        """Validate location coordinates (0-200 Euclidean grid)"""
         if latitude is not None and longitude is not None:
             try:
                 lat = float(latitude)
@@ -55,7 +53,6 @@ class AuthService:
     def register_user(full_name, email, password, role, phone=None, address=None, city=None, state=None, latitude=None, longitude=None):
         """Register a new user"""
 
-        # Validate inputs
         if not full_name or not email or not password or not role:
             return False, "Missing required fields"
 
@@ -69,21 +66,15 @@ class AuthService:
         if role not in ['FARMER', 'BUYER', 'TRANSPORTER']:
             return False, "Invalid role"
 
-        # Validate coordinates
         is_valid, msg = AuthService.validate_coordinates(latitude, longitude)
         if not is_valid:
             return False, msg
 
-        # Check if email already exists
-        query = "SELECT user_id FROM users WHERE email = %s"
-        result = Database.execute_query(query, (email,))
-        if result and len(result) > 0:
+        result = Database.execute_query("SELECT user_id FROM users WHERE email = %s", (email,))
+        if result:
             return False, "Email already registered"
 
-        # Hash password
         hashed_password = AuthService.hash_password(password)
-
-        # Insert user into database
         query = """
             INSERT INTO users (full_name, email, password_hash, role, phone, address, city, state, latitude, longitude)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -93,8 +84,7 @@ class AuthService:
 
         if user_id:
             return True, f"User registered successfully with ID: {user_id}"
-        else:
-            return False, "Failed to register user"
+        return False, "Failed to register user"
 
     @staticmethod
     def login_user(email, password):
@@ -106,25 +96,20 @@ class AuthService:
         if not AuthService.validate_email(email):
             return False, None, "Invalid email format"
 
-        # Get user from database
         query = "SELECT user_id, full_name, email, password_hash, role FROM users WHERE email = %s"
         result = Database.execute_query(query, (email,))
 
-        if not result or len(result) == 0:
+        if not result:
             return False, None, "Invalid email or password"
 
         user = result[0]
-
-        # Verify password
         if not AuthService.verify_password(password, user['password_hash']):
             return False, None, "Invalid email or password"
 
-        # Return user info (excluding password hash)
         user_data = {
             'user_id': user['user_id'],
             'full_name': user['full_name'],
             'email': user['email'],
             'role': user['role']
         }
-
         return True, user_data, "Login successful"

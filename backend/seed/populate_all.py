@@ -2,19 +2,20 @@
 Populate: 4 farmers, produce listings (matching images), purchase requests with ACCEPTED, deliveries.
 Buyer = Vishwajeet (ID 1)
 """
-import mysql.connector, math
+import pymysql, math
+from werkzeug.security import generate_password_hash
 from config import Config
 
 
-conn = mysql.connector.connect(
+conn = pymysql.connect(
     host=Config.DB_HOST, user=Config.DB_USER,
-    password=Config.DB_PASSWORD, database=Config.DB_NAME
+    password=Config.DB_PASSWORD, database=Config.DB_NAME,
+    cursorclass=pymysql.cursors.DictCursor
 )
-cursor = conn.cursor(dictionary=True)
+cursor = conn.cursor()
 
 PWD = "Test@123"
-import bcrypt
-pwd_hash = bcrypt.hashpw(PWD.encode('utf-8'), bcrypt.gensalt(12)).decode('utf-8')
+pwd_hash = generate_password_hash(PWD)
 
 # ── 1. CLEAR old data ────────────────────────────────────────
 cursor.execute("DELETE FROM deliveries")

@@ -1,7 +1,11 @@
-import mysql.connector
+import pymysql
 from config import Config
-conn = mysql.connector.connect(host=Config.DB_HOST, user=Config.DB_USER, password=Config.DB_PASSWORD, database=Config.DB_NAME)
-cursor = conn.cursor(dictionary=True)
+conn = pymysql.connect(
+    host=Config.DB_HOST, user=Config.DB_USER,
+    password=Config.DB_PASSWORD, database=Config.DB_NAME,
+    cursorclass=pymysql.cursors.DictCursor
+)
+cursor = conn.cursor()
 
 print("=== PURCHASE REQUESTS ===")
 cursor.execute("""

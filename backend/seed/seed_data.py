@@ -1,15 +1,16 @@
-import mysql.connector
+import pymysql
 from config import Config
 from modules.produce import ProduceService
 
-conn = mysql.connector.connect(
+conn = pymysql.connect(
     host=Config.DB_HOST,
     user=Config.DB_USER,
     password=Config.DB_PASSWORD,
     database=Config.DB_NAME,
-    port=Config.DB_PORT
+    port=Config.DB_PORT,
+    cursorclass=pymysql.cursors.DictCursor
 )
-cursor = conn.cursor(dictionary=True)
+cursor = conn.cursor()
 
 cursor.execute("SELECT user_id, full_name, role FROM users")
 users = cursor.fetchall()
