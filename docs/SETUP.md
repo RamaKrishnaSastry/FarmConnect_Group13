@@ -1,280 +1,135 @@
 # FarmConnect Setup Guide
 
-## Project Structure
+## Project Structure (active stack)
 
 ```
 FarmConnect_Group13/
-├── backend/
-│   ├── app.py              # Main Flask application
-│   ├── config.py           # Configuration settings
-│   ├── requirements.txt    # Python dependencies
-│   └── modules/
-│       ├── __init__.py
-│       ├── auth.py         # Authentication service
-│       └── db.py           # Database connection manager
+├── backend/                 # Flask API (port 5000)
+│   ├── app.py               # All API routes (auth, produce, requests, deliveries, ratings, chat)
+│   ├── config.py            # Reads DB config from .env (python-dotenv)
+│   ├── schema.sql           # FULL database schema + demo data — paste into MySQL Workbench
+│   ├── seed.py              # Re-seed demo data (safe to re-run)
+│   ├── requirements.txt     # Python dependencies
+│   └── .env / .env.example  # DB credentials
 │
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── LoginForm.jsx
-│   │   │   ├── RegisterForm.jsx
-│   │   │   ├── RoleSelector.jsx
-│   │   │   ├── AuthForms.css
-│   │   │   └── RoleSelector.css
-│   │   ├── pages/
-│   │   │   ├── AuthPage.jsx
-│   │   │   └── AuthPage.css
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.jsx
-│   │   └── config.js
-│   ├── public/
-│   │   └── index.html
+├── frontend/                # React + Vite app (port 5173)
+│   ├── src/                 # components / context / dashboards / hooks / pages / routes / api / utils
+│   ├── index.html
 │   ├── package.json
-│   └── .env.local (you need to create this)
+│   ├── vite.config.js       # /api proxy → http://localhost:5000
+│   ├── tailwind.config.js
+│   └── postcss.config.js
 │
-└── README.md (main documentation)
+├── .github/                 # Project board
+├── .gitignore
+└── *.md                     # Docs (README, QUICK_START, ARCHITECTURE, ...)
 ```
 
 ## Prerequisites
 
-- Python 3.8+ (for backend)
-- Node.js 16+ and npm (for frontend)
-- MySQL 8.0+ (database)
+- Python 3.8+
+- Node.js 16+ and npm
+- MySQL 8.0+
 
-## Backend Setup
+## 1. Database
 
-### 1. Create Virtual Environment
+Open `backend/schema.sql` in MySQL Workbench and run the **entire file**.
+It creates the `farmconnect` database, all tables, and demo data.
+Alternatively, from the CLI:
+
+```bash
+mysql -u root -p < backend/schema.sql
+```
+
+## 2. Backend
 
 ```bash
 cd backend
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
-```
-
-### 2. Install Dependencies
-
-```bash
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 3. Update Database Credentials
+Create `backend/.env` from `.env.example` and adjust the DB credentials:
 
-Edit `backend/config.py` if your database credentials are different:
-
-```python
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_PASSWORD = "n3u3da!"
-DB_NAME = "FarmConnect"
-DB_PORT = 3306
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-password
+DB_NAME=farmconnect
 ```
 
-### 4. Create Database
-
-Run this SQL script in your MySQL client to create the database and tables:
-
-```sql
--- Create database
-CREATE DATABASE IF NOT EXISTS FarmConnect;
-USE FarmConnect;
-
--- [Insert the full SQL schema provided earlier]
--- (See the CREATE TABLE statements in the main README)
-```
-
-### 5. Run the Backend Server
+Start the server:
 
 ```bash
 python app.py
 ```
 
-The server will start at `http://localhost:5000`
+Server runs at `http://localhost:5000` (the root `/` page lists every endpoint).
 
-## Frontend Setup
-
-### 1. Install Dependencies
+## 3. Frontend
 
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-### 2. Create Environment File
+Frontend runs at `http://localhost:5173`. The Vite dev server proxies `/api`
+requests to the Flask backend on port 5000, so no CORS issues in development.
+`VITE_API_URL` can be set in `frontend/.env.local` if the backend is not on
+`localhost:5000`.
 
-Create a `.env.local` file in the frontend directory:
+## 4. Demo accounts
 
-```env
-REACT_APP_API_URL=http://localhost:5000
-```
+All passwords are `password`:
 
-### 3. Start the Development Server
+| Role        | Email                        |
+|-------------|------------------------------|
+| Farmer      | farmer@farmconnect.com       |
+| Buyer       | buyer@farmconnect.com        |
+| Transporter | transporter@farmconnect.com  |
+
+`POST /api/auth/register` also supports creating new accounts:
+`{"full_name": "...", "email": "...", "password": "...", "role": "FARMER"}`.
+
+## 5. Re-seeding
 
 ```bash
-npm start
+cd backend
+python seed.py
 ```
+or `GET /api/seed` once the server is running.
 
-The app will open at `http://localhost:3000`
+## API Endpoints
 
-## Key Features Implemented
+- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me?user_id=`
+- Produce: `GET /api/produce/<farmer_id>`, `POST /api/produce`, `PUT/DELETE /api/produce/<id>`, `POST /api/produce/<id>/photos`
+- Requests: `GET /api/requests/<farmer_id>`, `PUT /api/requests/<id>/approve|reject`,
+  `POST /api/buyer/requests`, `GET /api/buyer/requests/<buyer_id>`, `PUT /api/buyer/requests/<id>`
+- Buyer dashboard: `GET /api/buyer/dashboard/<buyer_id>`
+- Deliveries: `GET /api/deliveries/<farmer_id>`,
+  `GET /api/transporter/dashboard/<transporter_id>`,
+  `PUT /api/transporter/deliveries/<id>/accept`,
+  `PUT /api/transporter/deliveries/<id>/status`
+- Ratings: `POST /api/ratings`, `GET /api/ratings/<farmer_id>`
+- Chat: `GET /api/chat/<request_id>`, `POST /api/chat`
 
-### Authentication Module (`backend/modules/auth.py`)
+## Security notes
 
-- **Password Hashing**: Uses bcrypt with 12 salt rounds for secure password storage
-- **Email Validation**: Validates email format before storing
-- **Password Strength Validation**:
-  - Minimum 8 characters
-  - At least 1 uppercase letter
-  - At least 1 lowercase letter
-  - At least 1 digit
-- **User Registration**: Stores user with hashed password and optional location info
-- **User Login**: Verifies credentials and returns user info on success
-
-### Database Module (`backend/modules/db.py`)
-
-- **Connection Pooling**: Manages MySQL connections
-- **Query Execution**: Handles SELECT queries with dictionary results
-- **Update Execution**: Handles INSERT/UPDATE/DELETE with transaction support
-
-### Frontend Features
-
-#### Login Screen
-- Email and password input fields
-- Password visibility toggle
-- Error messages for failed login
-- Link to registration
-- Responsive design
-
-#### Role Selection
-- Three role cards: Farmer, Buyer, Transporter
-- Each role shows features and benefits
-- Smooth animations on hover
-- Mobile responsive
-
-#### Registration Form
-- Dynamic form that changes based on selected role
-- Real-time password validation
-- Password confirmation matching
-- Optional location fields (phone, address, city, state)
-- Success feedback with auto-redirect to login
-
-### API Endpoints
-
-#### POST `/api/auth/register`
-
-Request:
-```json
-{
-  "fullName": "John Farmer",
-  "email": "john@farm.com",
-  "password": "SecurePass123",
-  "role": "FARMER",
-  "phone": "+1-555-0000",
-  "address": "123 Farm Road",
-  "city": "Springfield",
-  "state": "IL"
-}
-```
-
-Response (Success):
-```json
-{
-  "success": true,
-  "message": "User registered successfully with ID: 1",
-  "role": "FARMER"
-}
-```
-
-#### POST `/api/auth/login`
-
-Request:
-```json
-{
-  "email": "john@farm.com",
-  "password": "SecurePass123"
-}
-```
-
-Response (Success):
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "user": {
-    "user_id": 1,
-    "full_name": "John Farmer",
-    "email": "john@farm.com",
-    "role": "FARMER"
-  }
-}
-```
-
-## Security Features
-
-1. **Password Hashing**: bcrypt with 12 rounds
-2. **CORS Enabled**: Configured for frontend-backend communication
-3. **Input Validation**: Email, password strength, role validation
-4. **SQL Injection Prevention**: Parameterized queries using MySQL connector
-5. **No Password Storage**: Password hashes only, never plaintext
+- Passwords are hashed with Werkzeug (`scrypt`) / bcrypt — never stored plaintext.
+- All SQL uses parameterized queries (SQL-injection safe).
+- `config.py` reads secrets from `backend/.env`, which is git-ignored.
 
 ## Troubleshooting
 
-### Backend Issues
-
-**"Connection refused" on port 5000**
-- Check if backend is running
-- Verify firewall settings
-
-**Database connection error**
-- Verify MySQL is running
-- Check database credentials in `config.py`
-- Ensure database and tables are created
-
-**ModuleNotFoundError**
-- Activate virtual environment
-- Run `pip install -r requirements.txt`
-
-### Frontend Issues
-
-**"Blank page" or "Cannot GET /"**
-- Clear browser cache (Ctrl+F5)
-- Check console for errors (F12)
-
-**API calls failing**
-- Verify `REACT_APP_API_URL` in `.env.local`
-- Check backend server is running
-- Check CORS configuration
-
-**Module not found errors**
-- Run `npm install` again
-- Delete `node_modules` and `package-lock.json`, then reinstall
-
-## Next Steps
-
-1. Create farmer/buyer/transporter dashboards
-2. Implement produce listing functionality
-3. Add purchase request system
-4. Build delivery management
-5. Add real-time notifications
-6. Implement payment system
-
-## Development Tips
-
-- Use React DevTools browser extension for frontend debugging
-- Use Flask debugger: set `debug=True` in `app.py`
-- Check browser console (F12) for frontend errors
-- Check server logs for backend errors
-- Use Postman or similar tool to test API endpoints
-
-## Database Schema Notes
-
-- All timestamps use `CURRENT_TIMESTAMP`
-- Foreign keys with `ON DELETE CASCADE` for data integrity
-- Unique constraints on email and request ratings
-- ENUM types for roles and statuses
-- Decimal types for precise monetary values
+| Issue | Fix |
+|-------|-----|
+| MySQL connection error | Start the MySQL service; check `backend/.env` |
+| Tables missing | Re-run `backend/schema.sql` |
+| Port 5000 in use | Change `FLASK_PORT` in `.env` + proxy target in `vite.config.js` |
+| Port 5173 in use | `npm run dev -- --port 3000` |
+| API calls failing | Confirm backend is up and `VITE_API_URL` is correct |
+| ModuleNotFoundError | `pip install -r requirements.txt` in the venv |

@@ -1,4 +1,5 @@
 import os
+import re
 from uuid import uuid4
 import pymysql
 from flask import Flask, request, jsonify
@@ -6,7 +7,6 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from config import DB_CONFIG
-from modules.auth import AuthService
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -89,6 +89,14 @@ def seed():
             buyer_id = cur.lastrowid
 
             cur.execute(
+                '''INSERT INTO users (full_name, email, password_hash, role, phone, address, city, state, latitude, longitude)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                ('Road Runner LLC', 'transporter@farmconnect.com', generate_password_hash('password'),
+                 'TRANSPORTER', '555-9999', '78 Logistics Blvd', 'Peoria', 'IL', 40.6936, -89.5890),
+            )
+            transporter_id = cur.lastrowid
+
+            cur.execute(
                 '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit)
                    VALUES (%s, %s, %s, %s, %s, %s)''',
                 (farmer_id, 'Organic Tomatoes', 'Fresh, ripe tomatoes from our farm', 100, 'kg', 5.50),
@@ -133,40 +141,17 @@ def seed():
         conn.commit()
     finally:
         conn.close()
-    return jsonify({'message': 'Demo data created successfully'})
+    return jsonify({
+        'message': 'Demo data created successfully',
+        'accounts': [
+            {'role': 'FARMER', 'email': 'farmer@farmconnect.com', 'password': 'password'},
+            {'role': 'BUYER', 'email': 'buyer@farmconnect.com', 'password': 'password'},
+            {'role': 'TRANSPORTER', 'email': 'transporter@farmconnect.com', 'password': 'password'},
+        ],
+    })
 
 
 # ===== AUTH =====
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    data = request.get_json(silent=True) or {}
-
-    email = (data.get('email') or '').strip().lower()
-    success, message = AuthService.register_user(
-        full_name=(data.get('full_name') or '').strip(),
-        email=email,
-        password=data.get('password') or '',
-        role=(data.get('role') or '').upper(),
-        phone=data.get('phone'),
-        address=data.get('address'),
-        city=data.get('city'),
-        state=data.get('state'),
-        latitude=data.get('latitude'),
-        longitude=data.get('longitude'),
-    )
-    if not success:
-        return jsonify({'message': message}), 400
-
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT * FROM users WHERE email = %s', (email,))
-            user = cur.fetchone()
-    finally:
-        conn.close()
-    return jsonify({'user': map_user(user)}), 201
-
-
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -184,6 +169,60 @@ def login():
         return jsonify({'message': 'Invalid credentials'}), 401
 
     return jsonify({'user': map_user(user)})
+
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json() or {}
+    full_name = data.get('full_name') or data.get('fullName')
+    email = data.get('email')
+    password = data.get('password')
+    role = (data.get('role') or '').upper()
+    phone = data.get('phone')
+    address = data.get('address')
+    city = data.get('city')
+    state = data.get('state')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    if not full_name or not email or not password:
+        return jsonify({'message': 'Full name, email and password are required'}), 400
+    if role not in ('FARMER', 'BUYER', 'TRANSPORTER'):
+        return jsonify({'message': 'Role must be FARMER, BUYER or TRANSPORTER'}), 400
+
+    if len(password) < 8:
+        return jsonify({'message': 'Password must be at least 8 characters long'}), 400
+    if not re.search(r'[A-Z]', password):
+        return jsonify({'message': 'Password must contain at least one uppercase letter'}), 400
+    if not re.search(r'[a-z]', password):
+        return jsonify({'message': 'Password must contain at least one lowercase letter'}), 400
+    if not re.search(r'[0-9]', password):
+        return jsonify({'message': 'Password must contain at least one digit'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT user_id FROM users WHERE email = %s', (email,))
+            if cur.fetchone():
+                return jsonify({'message': 'Email already registered'}), 409
+            cur.execute(
+                '''INSERT INTO users (full_name, email, password_hash, role, phone, address, city, state, latitude, longitude)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (full_name, email, generate_password_hash(password), role, phone, address, city, state, latitude, longitude),
+            )
+            conn.commit()
+            user_id = cur.lastrowid
+    finally:
+        conn.close()
+
+    return jsonify({
+        'message': 'User registered successfully',
+        'user': map_user({
+            'user_id': user_id, 'full_name': full_name, 'email': email, 'role': role,
+            'phone': phone, 'address': address, 'city': city, 'state': state,
+            'latitude': latitude, 'longitude': longitude,
+        }),
+    }), 201
 
 
 @app.route('/api/auth/me', methods=['GET'])
@@ -341,11 +380,69 @@ def approve_request(request_id):
         with conn.cursor() as cur:
             cur.execute("UPDATE purchase_requests SET status = 'APPROVED' WHERE request_id = %s", (request_id,))
             conn.commit()
+            _create_delivery_for_request(cur, request_id)
+            conn.commit()
             cur.execute('SELECT * FROM purchase_requests WHERE request_id = %s', (request_id,))
             row = cur.fetchone()
     finally:
         conn.close()
     return jsonify(map_request(row) if row else {'message': 'Not found'}), (200 if row else 404)
+
+
+def _create_delivery_for_request(cur, request_id):
+    """Create a SHIPPED delivery when a purchase request is approved."""
+    cur.execute(
+        '''SELECT pr.*, pl.farmer_id, pl.location AS produce_location,
+                  u_farmer.address AS pickup_address, u_farmer.city AS pickup_city,
+                  u_farmer.latitude AS pickup_lat, u_farmer.longitude AS pickup_lon,
+                  u_buyer.address AS delivery_address, u_buyer.city AS delivery_city,
+                  u_buyer.latitude AS delivery_lat, u_buyer.longitude AS delivery_lon
+           FROM purchase_requests pr
+           JOIN produce_listings pl ON pl.produce_id = pr.produce_id
+           JOIN users u_farmer ON u_farmer.user_id = pl.farmer_id
+           JOIN users u_buyer ON u_buyer.user_id = pr.buyer_id
+           WHERE pr.request_id = %s''',
+        (request_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return
+
+    cur.execute('SELECT delivery_id FROM deliveries WHERE request_id = %s', (request_id,))
+    if cur.fetchone():
+        return
+
+    pickup = row.get('pickup_address') or row.get('produce_location')
+    delivery = row.get('delivery_address') or row.get('delivery_city')
+    if not pickup:
+        pickup = f"{row.get('pickup_city') or ''} {row.get('produce_location') or ''}".strip() or None
+    if not delivery:
+        delivery = row.get('delivery_city')
+
+    distance = None
+    est_time = None
+    pickup_lat = row.get('pickup_lat')
+    pickup_lon = row.get('pickup_lon')
+    delivery_lat = row.get('delivery_lat')
+    delivery_lon = row.get('delivery_lon')
+    if pickup_lat and pickup_lon and delivery_lat and delivery_lon:
+        flat, flon = float(pickup_lat), float(pickup_lon)
+        blat, blon = float(delivery_lat), float(delivery_lon)
+        d = ((blat - flat) ** 2 + (blon - flon) ** 2) ** 0.5
+        distance = round(d, 2)
+        est_time = int(d * 1.3)
+
+    cur.execute(
+        '''INSERT INTO deliveries (request_id, status, pickup_address, delivery_address,
+                                  pickup_latitude, pickup_longitude,
+                                  delivery_latitude, delivery_longitude,
+                                  distance_km, estimated_time_minutes)
+           VALUES (%s, 'SHIPPED', %s, %s, %s, %s, %s, %s, %s, %s)''',
+        (request_id, pickup, delivery,
+         pickup_lat, pickup_lon,
+         delivery_lat, delivery_lon,
+         distance, est_time),
+    )
 
 
 @app.route('/api/requests/<int:request_id>/reject', methods=['PUT'])
@@ -354,6 +451,10 @@ def reject_request(request_id):
     try:
         with conn.cursor() as cur:
             cur.execute("UPDATE purchase_requests SET status = 'REJECTED' WHERE request_id = %s", (request_id,))
+            cur.execute(
+                "UPDATE deliveries SET status = 'CANCELLED' WHERE request_id = %s AND transporter_id IS NULL",
+                (request_id,),
+            )
             conn.commit()
             cur.execute('SELECT * FROM purchase_requests WHERE request_id = %s', (request_id,))
             row = cur.fetchone()
@@ -533,8 +634,15 @@ def accept_delivery(delivery_id):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE deliveries SET transporter_id = %s, status = 'IN_TRANSIT' WHERE delivery_id = %s",
+                "UPDATE deliveries SET transporter_id = %s, status = 'IN_TRANSIT', accepted_at = NOW() WHERE delivery_id = %s",
                 (transporter_id, delivery_id),
+            )
+            cur.execute(
+                '''UPDATE purchase_requests pr
+                   JOIN deliveries d ON d.request_id = pr.request_id
+                   SET pr.status = 'DELIVERING'
+                   WHERE d.delivery_id = %s''',
+                (delivery_id,),
             )
             conn.commit()
             cur.execute('SELECT * FROM deliveries WHERE delivery_id = %s', (delivery_id,))
@@ -578,6 +686,15 @@ def update_transporter_delivery_status(delivery_id):
     try:
         with conn.cursor() as cur:
             cur.execute("UPDATE deliveries SET status = %s WHERE delivery_id = %s", (status, delivery_id))
+            if status == 'DELIVERED':
+                cur.execute("UPDATE deliveries SET completed_at = NOW() WHERE delivery_id = %s", (delivery_id,))
+                cur.execute(
+                    '''UPDATE purchase_requests pr
+                       JOIN deliveries d ON d.request_id = pr.request_id
+                       SET pr.status = 'COMPLETED'
+                       WHERE d.delivery_id = %s''',
+                    (delivery_id,),
+                )
             conn.commit()
             cur.execute('SELECT * FROM deliveries WHERE delivery_id = %s', (delivery_id,))
             row = cur.fetchone()

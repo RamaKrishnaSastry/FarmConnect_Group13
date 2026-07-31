@@ -1,241 +1,175 @@
 # FarmConnect
 
+A web application connecting **farmers**, **buyers**, and **transporters** for produce sales and delivery. Farmers list produce, buyers place purchase requests, and transporters accept delivery jobs — with chat and ratings to keep everything connected.
 
+## Tech stack
 
+| Layer    | Technology                                        |
+| -------- | ------------------------------------------------- |
+| Backend  | Python 3, Flask, PyMySQL, Flask-CORS, Werkzeug     |
+| Database | MySQL 8 (schema + demo seed in `backend/schema.sql`) |
+| Frontend | React 18, Vite 5, Tailwind CSS, React Router, Axios |
 
-## **1. Vision**
-FarmConnect is a lightweight web application that helps farmers list available produce, buyers place purchase requests, and transporters manage delivery tasks. It replaces scattered phone calls and manual coordination with a clean, structured workflow. This is a success if a user can list produce, a buyer can request it, and a transporter can complete the delivery.
-
-## **2. Users**
-### 1. Farmer
-- manages a small farm and wants a simple way to list his produce and receive purchase requests.
-- Needs: list produce, track buyer requests, confirm availability
-
-### 2. Buyer
-- purchases produce for a local market. She wants a clear list of available items and a simple way to place orders.
-- Needs: browse produce, request purchase, track order status
-
-### 3. Transporter
-- handles deliveries between farms and buyers. He needs a clean dashboard showing assigned delivery tasks.
-- Needs: see delivery tasks, mark tasks completed
-
-## **3. User stories**
-
-- As a **farmer**, I want to **create an account**, so that **I can list my produce**.
-**Done when:** signup works, login works, farmer dashboard loads.
-
-- As a **farmer**, I want to **list produce items**, so that **buyers can see what’s available**.
-**Done when:** form saves item name, quantity, price, and appears in the list.
-
-- As a **buyer**, I want to **browse available produce**, so that **I can find items to purchase**.
-**Done when:** buyer sees list of all produce with name, quantity, price.
-
-- As a **buyer**, I want to **request a purchase**, so that the farmer knows I want their produce.
-**Done when:** buyer submits request, farmer sees it, request shows “Pending”.
-
-- As a **farmer**, I want to **approve or reject a purchase request**, so that **buyers know the status**.
-**Done when:** farmer clicks approve/reject, status updates for buyer.
-
-- As a **transporter**, I want to **see all approved purchase requests**, so that **I know what needs delivery**.
-**Done when:** transporter dashboard shows approved tasks with farm + buyer info.
-
-- As a **transporter**, I want to **accept a delivery task**, so that **I can take responsibility for it**.
-**Done when:** transporter clicks “Accept”, task assigns to them.
-
-- As a **transporter**, I want to **mark a delivery as completed**, so that **the buyer and farmer know it’s done**.
-**Done when:** status updates to “Completed” and appears in history.
-
-- As a **farmer**, I want to **edit or delete a produce listing**, so that **I can keep information accurate**.
-**Done when:** product listing table gets updated.
-
-- As a **buyer**, I want to **see the status of my purchase requests**, so that **I know what’s happening**.
-**Done when:** Can see the status of the purchase requests as pending, approved, transporter assign etc.
-
-- As a **buyer**, I want to **rate the purchase**, so that **it helps to ensure quality of produce**.
-**Done when:** Ratings updated, other users can see the ratings.
-
-- As a **transporter**, I want to **filter tasks by location**, so that **I can manage my workload**.
-**Done when:** Location filter is available, location filtering is applied.
-
-- As a **buyer**, I want to **message the farmer**, so that **I can clarify details**.
-**Done when:** chat channel is available, farmer message reaches buyer and vice versa.
-
-- As a **transporter**, I want to **a map link to farm and buyer locations**, so that **transporter can see the travel details**.
-**Done when:** can see source and destinations, travel details like distance, time etc.
-
-- As a **farmer**, I want to **upload a photo of produce**, so that **buyers can understand the quality of produce**.
-**Done when:** farmers upload photos, buyers can see the photos.
-
-
-## **4. Scope**
-
-### **Must-Have (MVP)**
-Farmer signup/login
-
-Farmer produce listing
-
-Buyer browsing + purchase requests
-
-Farmer approval/rejection
-
-Transporter dashboard
-
-Accept + complete delivery tasks
-
-Status updates visible to all roles
-
-### **Nice-to-Have**
-Photos
-
-Map links
-
-Messaging
-
-Manager dashboard
-
-Ratings
-
-Task History
-
-Payment System
-
-### **Non-Goals**
-No GPS tracking
-
-No inventory management
-
-No automated routing
-
-No analytics or charts
-
-No marketplace bidding system
-
-
-## **5. Key screens / mockups.**
-### 1. Farmer Dashboard
-Button: “Add Produce”
-
-List of produce items
-
-Incoming buyer requests
-
-Approve/Reject buttons
-
-### 2. Add Produce Form
-Name
-
-Quantity
-
-Price
-
-Description
-
-Submit
-
-### 3. Buyer Dashboard
-List of all produce
-
-“Request Purchase” button
-
-Status of past requests
-
-### 4. Transporter Dashboard
-List of approved requests
-
-Farm → Buyer delivery info
-
-“Accept Task” button
-
-“Complete Delivery” button
-
-
-## **6. Data & rules.**
-### Core Data Models
-#### User
-id
-
-name
-
-email
-
-passwordHash
-
-role (farmer / buyer / transporter)
-
-#### Produce
-id
-
-farmerId
-
-name
-
-quantity
-
-price
-
-description
-
-createdAt
-
-#### PurchaseRequest
-id
-
-buyerId
-
-produceId
-
-status (pending / approved / rejected / delivering / completed)
-
-assignedTransporterId (nullable)
-
-createdAt
-
-### Rules
-Farmers can only edit their own produce.
-
-Buyers can only request existing produce.
-
-Transporters can only complete tasks assigned to them.
-
-A request must be approved before transporters see it.
-
-Only one transporter can accept a task.
-
----
-
-## About the implementation
-
-The app allows farmers to list available produce, including basic details such as name, quantity, and price. This gives farmers a clear, organized way to present what they have for sale. Buyers c[...]
-
----
-
-
-
-
-## Flowchart
-
-```mermaid
-flowchart TD
-    User[User Login] --> Auth[Authentication]
-    Auth --> Role{Role}
-    
-    Role --> Farmer
-    Role --> Buyer
-    Role --> Transporter
-    
-    Farmer -->|Create/Edit Produce| ProduceDB[(Produce)]
-    Buyer -->|Browse| ProduceDB
-    
-    Buyer -->|Create Request| RequestDB[(Purchase Requests)]
-    
-    RequestDB --> Farmer
-    Farmer -->|Approve/Reject| RequestDB
-    
-    RequestDB -->|Approved Only| Transporter
-    
-    Transporter -->|Accept Task| RequestDB
-    Transporter -->|Complete Delivery| RequestDB
-    
-    RequestDB --> Buyer
-    RequestDB --> Farmer
 ```
+backend/    Flask API (port 5000) + MySQL schema
+frontend/   React + Vite app (port 5173)
+docs/       All documentation (setup, architecture, testing, ...)
+```
+
+---
+
+## Prerequisites
+
+- **Python 3.9+** — check with `python --version`
+- **MySQL 8.x** running locally (Workbench optional, any client works)
+- **Node.js 18+** and **npm** — check with `node --version` / `npm --version`
+
+---
+
+## 1. Set up the database
+
+Create and seed the database by running `backend/schema.sql` once. The file creates the `farmconnect` database, all 7 tables, and demo data for all three roles.
+
+**Option A — MySQL Workbench / client:**
+
+1. Open `backend/schema.sql` in a Query tab.
+2. Run the whole file (it also does `DROP TABLE IF EXISTS` so it is safe to re-run).
+
+**Option B — Python (no MySQL client needed):**
+
+```bash
+cd backend
+pip install -r requirements.txt
+python -c "import pymysql, re; conn = pymysql.connect(host='localhost', user='root', password='YOUR_MYSQL_PASSWORD', autocommit=True); cur = conn.cursor(); [cur.execute(s) for s in [x.strip() for x in re.split(r';', open('schema.sql', encoding='utf-8').read()) if x.strip() and not x.strip().upper().startswith(('CREATE DATABASE', 'USE '))]]; conn.close(); print('Database ready')"
+```
+
+> `schema.sql` runs `DROP TABLE IF EXISTS`, so re-running it resets the database to a clean demo state at any time.
+
+---
+
+## 2. Configure the backend
+
+```bash
+cd backend
+```
+
+Copy the example config and edit it to match your MySQL credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+
+```ini
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-mysql-password   # <- your MySQL root password
+DB_NAME=farmconnect
+
+SECRET_KEY=change-me-in-production
+FLASK_ENV=development
+FLASK_PORT=5000
+```
+
+Install dependencies and start the API:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+The backend runs at **http://localhost:5000** with a live API index at `http://localhost:5000/`.
+
+> **Alternate seed**: instead of running `schema.sql`, you can start the server and hit `GET /api/seed` once — it inserts the same demo users/produce/requests using the credentials in `.env`.
+
+---
+
+## 3. Configure and run the frontend
+
+Open a **second terminal**:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app runs at **http://localhost:5173**.
+
+Optional: if your backend is not on `localhost:5000`, create `frontend/.env`:
+
+```bash
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## 4. Demo accounts
+
+| Role        | Email                       | Password   |
+| ----------- | --------------------------- | ---------- |
+| Farmer      | farmer@farmconnect.com      | `password` |
+| Buyer       | buyer@farmconnect.com       | `password` |
+| Transporter | transporter@farmconnect.com | `password` |
+
+Log in at **http://localhost:5173** with any of these. You can also **register a new account** from the "Sign up" link on the login page (role: Farmer, Buyer, or Transporter).
+
+### Registration password rules
+
+New passwords must contain at least:
+- 8 characters
+- one uppercase letter
+- one lowercase letter
+- one digit
+
+---
+
+## 5. Run the backend test suite
+
+With the backend running on `localhost:5000`, run the end-to-end API test suite from a third terminal:
+
+```bash
+python backend_test.py
+```
+
+The suite covers health, auth (login + register edge cases), produce CRUD, buyer requests, approve/reject, transporter accept → deliver → complete, ratings, and chat. Expected result:
+
+```
+RESULTS: 42 passed, 0 failed
+```
+
+> The test suite mutates the database (creates and consumes test requests/deliveries). Re-run `backend/schema.sql` to restore the clean demo state.
+
+---
+
+## Project structure
+
+```
+FarmConnect_Group13/
+├── backend/
+│   ├── app.py            # Flask API: auth, produce, requests, deliveries, ratings, chat, seed
+│   ├── config.py         # Reads DB settings from .env
+│   ├── seed.py           # Standalone demo-data seed script
+│   ├── schema.sql        # Full schema + demo seed (drop-in reset)
+│   ├── requirements.txt
+│   └── .env.example      # Copy to .env and edit
+├── frontend/
+│   ├── src/
+│   │   ├── api/          # Axios clients per role
+│   │   ├── components/   # Shared UI (cards, layout, grid location picker, ...)
+│   │   ├── context/      # Auth + role context
+│   │   ├── dashboards/   # Buyer / Farmer / Transporter dashboards
+│   │   ├── hooks/        # useAuth, useFarmerData, WebSocket chat
+│   │   ├── pages/        # Login, Register, DashboardRouter, NotFound
+│   │   ├── routes/       # AppRoutes
+│   │   └── styles/       # Tailwind + globals
+│   └── package.json
+├── docs/                 # Architecture, API working, setup, testing guides
+└── README.md
+```
+
+## Documentation
+
+Full documentation lives in [`docs/`](docs/README.md) — see also `docs/SETUP.md`, `docs/FRONTEND_SETUP.md`, `docs/ARCHITECTURE.md`, and `docs/TESTING_GUIDE.md`.

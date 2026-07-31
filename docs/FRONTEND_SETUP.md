@@ -24,24 +24,30 @@ npm build
 ## 🏗️ Project Structure
 
 ```
-src/
-├── api/                    # API layer (mock + real endpoints)
-├── components/
-│   ├── layout/            # Sidebar, Topbar, DashboardLayout
-│   ├── common/            # Reusable UI components (Card, Table, Loader, Badge)
-│   └── charts/            # Data visualization components
-├── dashboards/
-│   ├── FarmerDashboard/   # Farmer dashboard (fully implemented)
-│   ├── BuyerDashboard/    # Stub - ready for implementation
-│   └── TransporterDashboard/ # Stub - ready for implementation
-├── context/               # React Context (Auth, Role)
-├── hooks/                 # Custom React hooks
-├── pages/                 # Page components (Login, Dashboard, 404)
-├── routes/                # React Router setup
-├── styles/                # Global CSS + Tailwind
-├── utils/                 # Helpers (formatters, constants)
-├── App.jsx                # Main app wrapper
-└── main.jsx              # Vite entry point
+frontend/
+├── src/                    # Frontend source
+│   ├── api/                # axios API layer (real backend calls)
+│   ├── components/
+│   │   ├── layout/         # Sidebar, Topbar, DashboardLayout
+│   │   ├── common/         # Reusable UI components (Card, Table, Loader, Badge)
+│   │   └── charts/         # Data visualization components
+│   ├── dashboards/
+│   │   ├── FarmerDashboard/       # Farmer dashboard (fully implemented)
+│   │   ├── BuyerDashboard/        # Buyer dashboard (fully implemented)
+│   │   └── TransporterDashboard/  # Transporter dashboard (fully implemented)
+│   ├── context/            # React Context (Auth, Role)
+│   ├── hooks/              # Custom React hooks
+│   ├── pages/              # Page components (Login, Dashboard, 404)
+│   ├── routes/             # React Router setup
+│   ├── styles/             # Global CSS + Tailwind
+│   ├── utils/              # Helpers (formatters, constants)
+│   ├── App.jsx             # Main app wrapper
+│   └── main.jsx            # Vite entry point
+├── index.html              # Vite HTML entry
+├── package.json
+├── vite.config.js          # Dev proxy /api → http://localhost:5000
+├── tailwind.config.js
+└── postcss.config.js
 ```
 
 ---
@@ -52,22 +58,18 @@ src/
 - **Email**: `farmer@farmconnect.com`
 - **Password**: `password`
 
-The app uses mock authentication. To connect to a real backend:
-1. Update `VITE_API_URL` in `.env.local`
-2. Replace mock data in `src/api/farmerApi.js` with real API calls
+Auth is handled against the Flask backend via `src/context/AuthContext.jsx`.
+The Vite dev server proxies `/api` to the backend on `localhost:5000`. To point
+at a different backend, set `VITE_API_URL` in `frontend/.env.local`.
 
----
+## 📊 Dashboards
 
-## 📊 Farmer Dashboard Features
-
-✅ **Currently Implemented:**
-- Profile Card (farmer info)
-- Produce Listings (add, edit, delete with images)
-- Buyer Requests (approve, reject with details)
-- Delivery Tracking (real-time status)
-- Ratings (star ratings with reviews)
-- Chat Section (buyer communication)
-- Stats Overview (key metrics)
+✅ **All three dashboards are implemented:**
+- **Farmer**: profile card, produce listings (add/edit/delete + photos), buyer
+  requests (approve/reject), delivery tracking, ratings, chat, stats.
+- **Buyer**: browse available produce, request purchases, track request status,
+  rate product/delivery, message farmers.
+- **Transporter**: available deliveries, accept/complete tasks, delivery history.
 
 ---
 
@@ -85,27 +87,10 @@ To customize colors, edit `tailwind.config.js`
 
 ## 🔌 API Integration
 
-### Mock Data
-All API calls use mock data in `src/api/farmerApi.js`.
-
-### Connecting to Real Backend
-1. Install Axios (already included):
-   ```bash
-   npm install axios
-   ```
-
-2. Update `src/api/axiosClient.js`:
-   ```javascript
-   const API_BASE_URL = process.env.VITE_API_URL || 'https://your-backend.com/api';
-   ```
-
-3. Replace mock functions with real API calls:
-   ```javascript
-   export const getProduceListing = async (farmerId) => {
-     const { data } = await axiosClient.get(`/produce/${farmerId}`);
-     return data;
-   };
-   ```
+### Real Backend
+All API calls go to the Flask backend through `src/api/axiosClient.js`
+(base URL `VITE_API_URL` or `http://localhost:5000/api`). In dev, Vite proxies
+`/api` → `http://localhost:5000`, so no CORS issues.
 
 ---
 
@@ -118,12 +103,10 @@ All API calls use mock data in `src/api/farmerApi.js`.
 
 ## 🚧 Next Steps
 
-1. ✅ Scaffold complete
-2. ⏳ Connect to backend API (replace mock data)
-3. ⏳ Implement Buyer Dashboard
-4. ⏳ Implement Transporter Dashboard
-5. ⏳ Add WebSocket for real-time chat
-6. ⏳ Deploy to production
+1. ✅ All dashboards implemented (Farmer / Buyer / Transporter)
+2. ✅ Connected to real backend API
+3. ⏳ WebSocket for real-time chat (currently polling via REST)
+4. ⏳ Deploy to production
 
 ---
 
@@ -161,9 +144,9 @@ npm install -D tailwindcss postcss autoprefixer
 
 ## 📄 Environment Variables
 
-Create `.env.local`:
+Create `frontend/.env.local`:
 ```
-VITE_API_URL=http://localhost:3000/api
+VITE_API_URL=http://localhost:5000/api
 ```
 
 ---

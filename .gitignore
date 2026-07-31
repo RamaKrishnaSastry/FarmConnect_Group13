@@ -7,10 +7,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node / build artifacts
 node_modules
 dist
 dist-ssr
+.vite
 *.local
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
@@ -34,11 +37,22 @@ venv/
 .venv/
 *.egg-info/
 *.egg
-dist/
 build/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Environment variables
+# Environment variables (keep only the .example templates)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+
+# Flask / uploads
+backend/static/uploads/*
+backend/instance/
+*.sqlite3
+
+# Local service PID files
+*.pid

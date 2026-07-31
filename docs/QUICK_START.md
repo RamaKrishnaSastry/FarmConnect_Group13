@@ -1,243 +1,66 @@
 # FarmConnect Quick Start
 
-## 🚀 Get Started in 5 Minutes
+## Prerequisites
 
-### Step 1: Install Dependencies
+- Python 3.8+ (Flask backend)
+- Node.js 16+ / npm (React frontend)
+- MySQL 8.0+ (or the pre-installed MySQL80 service on Windows)
 
-**Backend:**
+## Step 1 — Database (MySQL Workbench)
+
+Open **backend/schema.sql** and paste the **whole file** into the MySQL Workbench
+Query tab, then run it. This creates the `farmconnect` database, all 7 tables
+(`users`, `produce_listings`, `produce_photos`, `purchase_requests`, `deliveries`,
+`ratings`, `chat_messages`) and demo seed data.
+
+## Step 2 — Backend
+
 ```bash
 cd backend
 pip install -r requirements.txt
+# optionally copy .env.example to .env and edit DB credentials
+python app.py
 ```
 
-**Frontend:**
+✅ Backend runs at `http://localhost:5000` (root `/` lists all API endpoints).
+
+## Step 3 — Frontend
+
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-### Step 2: Set Up Database
+✅ Frontend opens at `http://localhost:5173` (Vite proxies `/api` → :5000).
 
-```sql
--- Create the FarmConnect database using MySQL client
-CREATE DATABASE IF NOT EXISTS FarmConnect;
-USE FarmConnect;
+## Step 4 — Log in
 
--- Run all CREATE TABLE statements from your schema
--- (Copy the full schema provided in the requirements)
-```
+Demo accounts (password for all: **`password`**):
 
-### Step 3: Start Backend
+| Role        | Email                        |
+|-------------|------------------------------|
+| Farmer      | farmer@farmconnect.com       |
+| Buyer       | buyer@farmconnect.com        |
+| Transporter | transporter@farmconnect.com  |
+
+New users can also register via `POST /api/auth/register` (JSON body with
+`full_name`, `email`, `password`, `role` in FARMER/BUYER/TRANSPORTER).
+
+## Re-seeding demo data
 
 ```bash
 cd backend
-python app.py
-```
-✅ Backend runs at `http://localhost:5000`
-
-### Step 4: Start Frontend
-
-```bash
-cd frontend
-npm start
-```
-✅ Frontend opens at `http://localhost:3000`
-
----
-
-## 📍 Location Coordinates (Euclidean Grid)
-
-The city is simulated as a **200x200 Euclidean coordinate space**:
-- **Latitude (X-axis)**: 0 to 200 (horizontal)
-- **Longitude (Y-axis)**: 0 to 200 (vertical)
-
-### How it works:
-1. During registration, users see an **interactive city grid map**
-2. Click on any point on the grid to set your location
-3. A 📍 pin marker shows your selected coordinates
-4. Coordinates are stored in the database for each user
-
-### Example locations:
-```
-(50, 50)    - Center of city
-(0, 0)      - Southwest corner (origin)
-(200, 0)    - Southeast corner
-(0, 200)    - Northwest corner
-(200, 200)  - Northeast corner
+python seed.py
 ```
 
-### Use cases:
-- Calculate **distance between users** using Euclidean distance formula
-- Find **nearby farmers/buyers/transporters**
-- Optimize **delivery routes** based on coordinates
-- Group users by **location proximity**
+Or, after the server is running: `GET http://localhost:5000/api/seed`
 
----
+## Troubleshooting
 
-## 🔐 Password Security
-
-Passwords are hashed using **bcrypt** with 12 salt rounds:
-- **Never** stored in plaintext
-- Verified during login using bcrypt comparison
-- Minimum requirements enforced:
-  - 8+ characters
-  - 1 uppercase letter
-  - 1 lowercase letter
-  - 1 digit
-
-Example:
-- Input: `SecurePass123`
-- Stored: `$2b$12$abcdef...xyz` (hashed)
-
----
-
-## 📋 Test User Accounts
-
-After registration, use these credentials to test:
-
-### Farmer
-- Email: `farmer@example.com`
-- Password: `FarmPass123`
-
-### Buyer
-- Email: `buyer@example.com`
-- Password: `BuyerPass123`
-
-### Transporter
-- Email: `transporter@example.com`
-- Password: `TransPass123`
-
----
-
-## 🎯 User Flow
-
-```
-1. User visits http://localhost:3000
-   ↓
-2. Chooses "Login" or "Sign Up"
-   ↓
-3. If Sign Up:
-   - Selects role (Farmer/Buyer/Transporter)
-   - Fills registration form
-   - Password validated in real-time
-   ↓
-4. Backend stores hashed password in MySQL
-   ↓
-5. On Login:
-   - Email/Password verified
-   - User data returned
-   - Redirects to role-specific dashboard
-```
-
----
-
-## 📁 Project Structure
-
-```
-FarmConnect_Group13/
-├── backend/           # Flask API
-│   ├── app.py         # Main server
-│   ├── config.py      # Settings
-│   ├── modules/       # Business logic
-│   │   ├── auth.py    # Login/Registration
-│   │   └── db.py      # Database access
-│   └── requirements.txt
-│
-├── frontend/          # React UI
-│   ├── src/
-│   │   ├── pages/     # Full pages
-│   │   ├── components/# Reusable components
-│   │   └── config.js  # API settings
-│   └── package.json
-│
-└── SETUP.md          # Detailed setup guide
-```
-
----
-
-## 🔗 API Reference
-
-### Register New User
-```
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "John Farmer",
-  "email": "john@farm.com",
-  "password": "SecurePass123",
-  "role": "FARMER",
-  "phone": "+1-555-0000",
-  "address": "123 Farm Road",
-  "city": "Springfield",
-  "state": "IL"
-}
-```
-
-### Login
-```
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@farm.com",
-  "password": "SecurePass123"
-}
-```
-
----
-
-## ✅ What's Implemented
-
-✓ User registration with role selection  
-✓ Password hashing (bcrypt)  
-✓ User login with verification  
-✓ Email validation  
-✓ Password strength requirements  
-✓ Modern, responsive UI  
-✓ Error handling and feedback  
-✓ MySQL database integration  
-✓ Modular backend architecture  
-
----
-
-## 🚧 Next Phase
-
-1. **Farmer Dashboard** - List and manage produce
-2. **Buyer Dashboard** - Browse and request produce
-3. **Transporter Dashboard** - Accept and manage deliveries
-4. **Chat System** - Real-time messaging
-5. **Ratings System** - Reviews and ratings
-6. **Payment Integration** - Secure transactions
-
----
-
-## 💡 Tips
-
-- Use browser DevTools (F12) to inspect network requests
-- Check Flask logs for backend errors
-- Password must contain: uppercase + lowercase + number
-- All timestamps are in UTC
-- User ID is auto-generated by MySQL
-
----
-
-## 🐛 Common Issues & Fixes
-
-| Issue | Solution |
-|-------|----------|
-| "Port 5000 in use" | `lsof -i :5000` then kill the process |
-| "MySQL connection error" | Verify MySQL is running and credentials are correct |
-| "Blank page on frontend" | Clear cache (Ctrl+F5) and check console (F12) |
-| "CORS error" | Ensure backend CORS is enabled (it is by default) |
-| "Password validation fails" | Must have uppercase, lowercase, digit, 8+ chars |
-
----
-
-## 📞 Support
-
-For issues:
-1. Check SETUP.md troubleshooting section
-2. Review backend logs (server console)
-3. Check browser console (F12)
-4. Verify database is running and connected
+- **"MySQL connection error"** → make sure the MySQL service is running
+  (`Start-Service MySQL80`) and `backend/.env` matches your credentials.
+- **Port 5000 in use** → change `FLASK_PORT` in `backend/.env` and update
+  `vite.config.js` proxy target.
+- **Tables missing** → re-run `backend/schema.sql` in Workbench.
+- **Blank page** → check the browser console (F12) and confirm the backend is up.
