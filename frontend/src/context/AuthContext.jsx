@@ -65,6 +65,33 @@ export const AuthProvider = ({ children }) => {
     }
   }, [persistUser]);
 
+  const register = useCallback(async (payload) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      const registeredUser = data.user || data;
+      return persistUser(registeredUser);
+    } catch (err) {
+      const message = err.message || 'Registration failed';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [persistUser]);
+
   const logout = useCallback(() => {
     persistUser(null);
     setError(null);
@@ -89,7 +116,7 @@ export const AuthProvider = ({ children }) => {
   }, [persistUser]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,12 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { getDashboardPath } from '../utils/constants';
+
+const DEMO_ACCOUNTS = [
+  { role: 'Farmer', email: 'farmer@farmconnect.com', password: 'password' },
+  { role: 'Buyer', email: 'buyer@farmconnect.com', password: 'password' },
+];
 
 export const LoginPage = () => {
   const { login, loading, error: authError } = useAuth();
@@ -66,6 +71,24 @@ export const LoginPage = () => {
             {loading ? 'Signing in...' : 'Login'}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="font-medium text-green-700 hover:underline">
+            Sign up
+          </Link>
+        </p>
+
+        <div className="mt-6 rounded-xl border border-green-100 bg-green-50/60 p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-800">Demo accounts</p>
+          <ul className="space-y-1 text-xs text-gray-600">
+            {DEMO_ACCOUNTS.map((account) => (
+              <li key={account.role}>
+                <span className="font-medium text-gray-800">{account.role}</span>: {account.email} / {account.password}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

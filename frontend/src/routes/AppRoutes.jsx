@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardRouter } from '../pages/DashboardRouter';
 import { LoginPage } from '../pages/LoginPage';
+import { RegisterPage } from '../pages/RegisterPage';
 import { NotFound } from '../pages/NotFound';
 import { useAuth } from '../hooks/useAuth';
 import { getDashboardPath, normalizeRole, ROLES } from '../utils/constants';
@@ -25,6 +26,7 @@ export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to={getDashboardPath(user.role)} replace /> : <LoginPage />} />
+      <Route path="/register" element={user ? <Navigate to={getDashboardPath(user.role)} replace /> : <RegisterPage />} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
       <Route path="/dashboard/farmer" element={<ProtectedRoute requiredRole={ROLES.FARMER}><DashboardRouter /></ProtectedRoute>} />
       <Route path="/dashboard/buyer" element={<ProtectedRoute requiredRole={ROLES.BUYER}><DashboardRouter /></ProtectedRoute>} />
