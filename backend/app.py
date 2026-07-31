@@ -23,6 +23,7 @@ def index():
         'status': 'ok',
         'message': 'FarmConnect API is running',
         'endpoints': [
+            'POST /api/auth/register',
             'POST /api/auth/login',
             'GET /api/auth/me',
             'GET /api/seed',
@@ -87,6 +88,14 @@ def seed():
             buyer_id = cur.lastrowid
 
             cur.execute(
+                '''INSERT INTO users (full_name, email, password_hash, role, phone, address, city, state, latitude, longitude)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                ('Road Runner LLC', 'transporter@farmconnect.com', generate_password_hash('password'),
+                 'TRANSPORTER', '555-9999', '78 Logistics Blvd', 'Peoria', 'IL', 40.6936, -89.5890),
+            )
+            transporter_id = cur.lastrowid
+
+            cur.execute(
                 '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit)
                    VALUES (%s, %s, %s, %s, %s, %s)''',
                 (farmer_id, 'Organic Tomatoes', 'Fresh, ripe tomatoes from our farm', 100, 'kg', 5.50),
@@ -131,7 +140,14 @@ def seed():
         conn.commit()
     finally:
         conn.close()
-    return jsonify({'message': 'Demo data created successfully'})
+    return jsonify({
+        'message': 'Demo data created successfully',
+        'accounts': [
+            {'role': 'FARMER', 'email': 'farmer@farmconnect.com', 'password': 'password'},
+            {'role': 'BUYER', 'email': 'buyer@farmconnect.com', 'password': 'password'},
+            {'role': 'TRANSPORTER', 'email': 'transporter@farmconnect.com', 'password': 'password'},
+        ],
+    })
 
 
 # ===== AUTH =====
@@ -152,6 +168,51 @@ def login():
         return jsonify({'message': 'Invalid credentials'}), 401
 
     return jsonify({'user': map_user(user)})
+
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json() or {}
+    full_name = data.get('full_name') or data.get('fullName')
+    email = data.get('email')
+    password = data.get('password')
+    role = (data.get('role') or '').upper()
+    phone = data.get('phone')
+    address = data.get('address')
+    city = data.get('city')
+    state = data.get('state')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    if not full_name or not email or not password:
+        return jsonify({'message': 'Full name, email and password are required'}), 400
+    if role not in ('FARMER', 'BUYER', 'TRANSPORTER'):
+        return jsonify({'message': 'Role must be FARMER, BUYER or TRANSPORTER'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT user_id FROM users WHERE email = %s', (email,))
+            if cur.fetchone():
+                return jsonify({'message': 'Email already registered'}), 409
+            cur.execute(
+                '''INSERT INTO users (full_name, email, password_hash, role, phone, address, city, state, latitude, longitude)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (full_name, email, generate_password_hash(password), role, phone, address, city, state, latitude, longitude),
+            )
+            conn.commit()
+            user_id = cur.lastrowid
+    finally:
+        conn.close()
+
+    return jsonify({
+        'message': 'User registered successfully',
+        'user': map_user({
+            'user_id': user_id, 'full_name': full_name, 'email': email, 'role': role,
+            'phone': phone, 'address': address, 'city': city, 'state': state,
+            'latitude': latitude, 'longitude': longitude,
+        }),
+    }), 201
 
 
 @app.route('/api/auth/me', methods=['GET'])
