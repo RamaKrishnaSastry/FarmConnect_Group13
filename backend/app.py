@@ -27,9 +27,11 @@ def index():
             'POST /api/auth/register',
             'POST /api/auth/login',
             'GET /api/auth/me',
+            'PUT /api/users/<user_id>',
             'GET /api/seed',
             'GET /api/produce/<farmer_id>',
             'POST /api/produce',
+            'POST /api/produce/<produce_id>/photos',
             'PUT /api/produce/<produce_id>',
             'DELETE /api/produce/<produce_id>',
             'GET /api/requests/<farmer_id>',
@@ -37,6 +39,7 @@ def index():
             'PUT /api/requests/<request_id>/reject',
             'GET /api/deliveries/<farmer_id>',
             'GET /api/ratings/<farmer_id>',
+            'POST /api/ratings',
             'GET /api/chat/<request_id>',
             'POST /api/chat',
             'GET /api/buyer/dashboard/<buyer_id>',
@@ -96,48 +99,82 @@ def seed():
             )
             transporter_id = cur.lastrowid
 
-            cur.execute(
-                '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (farmer_id, 'Organic Tomatoes', 'Fresh, ripe tomatoes from our farm', 100, 'kg', 5.50),
-            )
-            tomato_id = cur.lastrowid
-            cur.execute(
-                '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (farmer_id, 'Fresh Carrots', 'Crispy, sweet carrots harvested this week', 50, 'kg', 3.20),
-            )
-            carrot_id = cur.lastrowid
-            cur.execute(
-                '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (farmer_id, 'Sweet Corn', 'Golden, sweet corn ears', 75, 'pieces', 1.80),
-            )
-            corn_id = cur.lastrowid
+            produce_rows = [
+                ('Organic Tomatoes', 'Fresh, ripe tomatoes from our farm', 100, 'kg', 5.50, '123 Farm Lane, Springfield, IL'),
+                ('Fresh Carrots', 'Crispy, sweet carrots harvested this week', 50, 'kg', 3.20, '123 Farm Lane, Springfield, IL'),
+                ('Sweet Corn', 'Golden, sweet corn ears', 75, 'pieces', 1.80, '123 Farm Lane, Springfield, IL'),
+            ]
+            produce_ids = []
+            for name, desc, qty, unit, price, location in produce_rows:
+                cur.execute(
+                    '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit, location)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+                    (farmer_id, name, desc, qty, unit, price, location),
+                )
+                produce_ids.append(cur.lastrowid)
+            tomato_id, carrot_id, corn_id = produce_ids
+
+            for pid, label in ((tomato_id, 'Tomatoes'), (carrot_id, 'Carrots'), (corn_id, 'Corn')):
+                cur.execute(
+                    '''INSERT INTO produce_photos (produce_id, photo_url)
+                       VALUES (%s, %s)''',
+                    (pid, f'https://placehold.co/400x300/2d6a4f/white?text={label}'),
+                )
+
+            request_rows = [
+                (tomato_id, 50, 250, 'PENDING', 'Need delivery by end of week'),
+                (carrot_id, 30, 90, 'APPROVED', 'Regular weekly order'),
+                (corn_id, 20, 30, 'COMPLETED', 'For weekend market stall'),
+            ]
+            req_ids = []
+            for pid, qty, price, status, note in request_rows:
+                cur.execute(
+                    '''INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note)
+                       VALUES (%s, %s, %s, %s, %s, %s)''',
+                    (pid, buyer_id, qty, price, status, note),
+                )
+                req_ids.append(cur.lastrowid)
+            req1_id, req2_id, req3_id = req_ids
 
             cur.execute(
-                '''INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (tomato_id, buyer_id, 50, 250, 'PENDING', 'Need delivery by end of week'),
+                '''INSERT INTO deliveries (request_id, status, pickup_address, delivery_address,
+                                           pickup_latitude, pickup_longitude, delivery_latitude, delivery_longitude,
+                                           distance_km, estimated_time_minutes)
+                   VALUES (%s, 'SHIPPED', %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (req2_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL',
+                 39.7817, -89.6501, 41.8781, -87.6298, 120, 180),
             )
-            req1_id = cur.lastrowid
             cur.execute(
-                '''INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (carrot_id, buyer_id, 30, 90, 'APPROVED', 'Regular weekly order'),
+                '''INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, delivery_address,
+                                           pickup_latitude, pickup_longitude, delivery_latitude, delivery_longitude,
+                                           distance_km, estimated_time_minutes, accepted_at, completed_at)
+                   VALUES (%s, %s, 'DELIVERED', %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())''',
+                (req3_id, transporter_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL',
+                 39.7817, -89.6501, 41.8781, -87.6298, 120, 180),
             )
-            req2_id = cur.lastrowid
 
-            cur.execute(
-                '''INSERT INTO deliveries (request_id, status, pickup_address, delivery_address, distance_km, estimated_time_minutes, accepted_at)
-                   VALUES (%s, %s, %s, %s, %s, %s, NOW())''',
-                (req2_id, 'SHIPPED', '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL', 120, 180),
-            )
-            cur.execute(
-                '''INSERT INTO ratings (request_id, buyer_id, rated_user_id, rating_type, rating, review)
-                   VALUES (%s, %s, %s, %s, %s, %s)''',
-                (req1_id, buyer_id, farmer_id, 'PRODUCT', 5, 'Excellent quality tomatoes! Very fresh and perfect color.'),
-            )
+            rating_rows = [
+                (req1_id, 'PRODUCT', 5, 'Excellent quality tomatoes! Very fresh and perfect color.'),
+                (req3_id, 'DELIVERY', 5, 'Fast and careful delivery. The corn arrived in perfect condition.'),
+            ]
+            for req_id, rating_type, rating, review in rating_rows:
+                cur.execute(
+                    '''INSERT INTO ratings (request_id, buyer_id, rated_user_id, rating_type, rating, review)
+                       VALUES (%s, %s, %s, %s, %s, %s)''',
+                    (req_id, buyer_id, farmer_id, rating_type, rating, review),
+                )
+
+            chat_rows = [
+                (req1_id, farmer_id, buyer_id, 'Hi! Your tomatoes are ready. Let me know if you need any details.'),
+                (req2_id, buyer_id, farmer_id, 'Hi! Are the carrots in stock this week?'),
+                (req2_id, farmer_id, buyer_id, 'Yes, 50kg ready. I have approved your request.'),
+            ]
+            for req_id, sender, receiver, message in chat_rows:
+                cur.execute(
+                    '''INSERT INTO chat_messages (request_id, sender_id, receiver_id, message)
+                       VALUES (%s, %s, %s, %s)''',
+                    (req_id, sender, receiver, message),
+                )
         conn.commit()
     finally:
         conn.close()
@@ -241,6 +278,31 @@ def get_me():
     if not user:
         return jsonify({'message': 'User not found'}), 404
     return jsonify({'user': map_user(user)})
+
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    data = request.get_json() or {}
+    allowed_fields = ('full_name', 'phone', 'address', 'city', 'state', 'latitude', 'longitude')
+    updates = {k: data[k] for k in allowed_fields if k in data and data[k] is not None}
+    if not updates:
+        return jsonify({'message': 'No fields to update'}), 400
+
+    sets = ', '.join(f'{field} = %s' for field in updates)
+    params = list(updates.values()) + [user_id]
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f'UPDATE users SET {sets} WHERE user_id = %s', params)
+            conn.commit()
+            cur.execute('SELECT * FROM users WHERE user_id = %s', (user_id,))
+            user = cur.fetchone()
+    finally:
+        conn.close()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    return jsonify({'message': 'Profile updated successfully', 'user': map_user(user)})
 
 
 # ===== PRODUCE =====

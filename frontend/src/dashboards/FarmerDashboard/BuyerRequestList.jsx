@@ -1,6 +1,5 @@
 import { BuyerRequestCard } from './BuyerRequestCard';
 import * as farmerApi from '../../api/farmerApi';
-import { Card, CardHeader } from '../../components/common/Card';
 
 export const BuyerRequestList = ({ requests, onRefresh }) => {
   const pendingCount = requests.filter(r => r.status === 'pending').length;
@@ -26,7 +25,7 @@ export const BuyerRequestList = ({ requests, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
+      <div id="requests-section" className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
         <h2 className="text-2xl font-bold text-gray-900">Buyer Requests</h2>
         <p className="mt-1 text-sm text-gray-600">
           {requests.length} total • {pendingCount} pending • {approvedCount} approved

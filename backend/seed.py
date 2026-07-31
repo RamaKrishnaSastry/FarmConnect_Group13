@@ -84,9 +84,9 @@ def seed():
             produce_ids = {}
             for fid, name, desc, qty, unit, price in PRODUCE:
                 cur.execute(
-                    '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit, status)
-                       VALUES (%s, %s, %s, %s, %s, %s, 'AVAILABLE')''',
-                    (fid, name, desc, qty, unit, price),
+                    '''INSERT INTO produce_listings (farmer_id, name, description, quantity, unit, price_per_unit, status, location)
+                       VALUES (%s, %s, %s, %s, %s, %s, 'AVAILABLE', %s)''',
+                    (fid, name, desc, qty, unit, price, '123 Farm Lane, Springfield, IL'),
                 )
                 pid = cur.lastrowid
                 produce_ids[name] = pid
@@ -109,21 +109,26 @@ def seed():
             req2_id = cur.lastrowid
             cur.execute(
                 '''INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note)
-                   VALUES (%s, %s, %s, %s, 'APPROVED', %s)''',
+                   VALUES (%s, %s, %s, %s, 'COMPLETED', %s)''',
                 (produce_ids['Sweet Corn'], buyer_id, 20, 30.00, 'For weekend market stall'),
             )
             req3_id = cur.lastrowid
 
             cur.execute(
-                '''INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, delivery_address, distance_km, estimated_time_minutes)
-                   VALUES (%s, NULL, 'SHIPPED', %s, %s, %s, %s)''',
-                (req2_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL', 120, 180),
+                '''INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, delivery_address,
+                   pickup_latitude, pickup_longitude, delivery_latitude, delivery_longitude,
+                   distance_km, estimated_time_minutes)
+                   VALUES (%s, NULL, 'SHIPPED', %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (req2_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL',
+                 39.7817, -89.6501, 41.8781, -87.6298, 120, 180),
             )
             cur.execute(
                 '''INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, delivery_address,
+                   pickup_latitude, pickup_longitude, delivery_latitude, delivery_longitude,
                    distance_km, estimated_time_minutes, accepted_at, completed_at)
-                   VALUES (%s, %s, 'DELIVERED', %s, %s, %s, %s, NOW(), NOW())''',
-                (req3_id, transporter_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL', 120, 180),
+                   VALUES (%s, %s, 'DELIVERED', %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())''',
+                (req3_id, transporter_id, '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL',
+                 39.7817, -89.6501, 41.8781, -87.6298, 120, 180),
             )
 
             cur.execute(
@@ -132,9 +137,24 @@ def seed():
                 (req1_id, buyer_id, farmer_id, 'Excellent quality tomatoes! Very fresh and perfect color.'),
             )
             cur.execute(
+                '''INSERT INTO ratings (request_id, buyer_id, rated_user_id, rating_type, rating, review)
+                   VALUES (%s, %s, %s, 'DELIVERY', 5, %s)''',
+                (req3_id, buyer_id, farmer_id, 'Fast and careful delivery. The corn arrived in perfect condition.'),
+            )
+            cur.execute(
                 '''INSERT INTO chat_messages (request_id, sender_id, receiver_id, message)
                    VALUES (%s, %s, %s, %s)''',
                 (req1_id, farmer_id, buyer_id, 'Hi! Your tomatoes are ready. Let me know if you need any details.'),
+            )
+            cur.execute(
+                '''INSERT INTO chat_messages (request_id, sender_id, receiver_id, message)
+                   VALUES (%s, %s, %s, %s)''',
+                (req2_id, buyer_id, farmer_id, 'Hi! Are the carrots in stock this week?'),
+            )
+            cur.execute(
+                '''INSERT INTO chat_messages (request_id, sender_id, receiver_id, message)
+                   VALUES (%s, %s, %s, %s)''',
+                (req2_id, farmer_id, buyer_id, 'Yes, 50kg ready. I have approved your request.'),
             )
         conn.commit()
     finally:

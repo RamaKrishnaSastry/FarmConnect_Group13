@@ -126,7 +126,35 @@ New passwords must contain at least:
 
 ---
 
-## 5. Run the backend test suite
+## 5. Guided tour (Help)
+
+FarmConnect ships with an **animated guided workflow** that walks users through every feature.
+
+- **Auto-starts** the first time you open each role's dashboard (after login).
+- **Replay anytime** via the **🎬 Tour** button in the top bar, or **❓ Help (take a tour)** in the avatar menu.
+- **How it works**: a spotlight highlights each feature while a callout explains it — click **Next →** (or press the `→` arrow key) to advance, **← Back** to revisit, and **Skip tour** to dismiss. Progress dots and a progress bar show where you are.
+- The tour is **role-aware**: farmers get a 8-step tour (overview, produce, add/edit, requests, deliveries, ratings, chat), buyers a 6-step tour (browse, request, track, rate, chat), and transporters a 6-step tour (available, filter, accept, route, complete).
+
+Steps that live on another tab/page **navigate there automatically** so you always see the real feature behind the spotlight.
+
+---
+
+## 6. Demo data
+
+`schema.sql` seeds everything you need to explore the platform with any role:
+
+- **3 users** — Farmer (John Farmer), Buyer (Fresh Market Co.), Transporter (Road Runner LLC).
+- **3 produce listings** — Organic Tomatoes, Fresh Carrots, Sweet Corn (with photos, prices, locations).
+- **3 purchase requests** — one `pending` (approve it as the farmer), one `approved` with a `shipped` delivery (accept it as the transporter), one `completed`.
+- **2 deliveries** — 1 unassigned (`shipped`, available to accept) and 1 `delivered` history row with route coordinates.
+- **2 ratings** — a product-quality 5★ and a delivery-experience 5★ for the farmer.
+- **3 chat messages** — ready-made conversations on two requests.
+
+Plus: the **farmer profile can be edited** in place (name, phone, address, coords) via `PUT /api/users/<id>`, and dashboard stats (total sales, completed orders, average rating) are computed live from real data.
+
+---
+
+## 7. Run the backend test suite
 
 With the backend running on `localhost:5000`, run the end-to-end API test suite from a third terminal:
 
@@ -134,7 +162,7 @@ With the backend running on `localhost:5000`, run the end-to-end API test suite 
 python backend_test.py
 ```
 
-The suite covers health, auth (login + register edge cases), produce CRUD, buyer requests, approve/reject, transporter accept → deliver → complete, ratings, and chat. Expected result:
+The suite covers health, auth (login + register edge cases), produce CRUD, buyer requests, approve/reject, transporter accept → deliver → complete, ratings, chat, and the new profile-update endpoint. Expected result:
 
 ```
 RESULTS: 42 passed, 0 failed
@@ -149,7 +177,7 @@ RESULTS: 42 passed, 0 failed
 ```
 FarmConnect_Group13/
 ├── backend/
-│   ├── app.py            # Flask API: auth, produce, requests, deliveries, ratings, chat, seed
+│   ├── app.py            # Flask API: auth, profile, produce, requests, deliveries, ratings, chat, seed
 │   ├── config.py         # Reads DB settings from .env
 │   ├── seed.py           # Standalone demo-data seed script
 │   ├── schema.sql        # Full schema + demo seed (drop-in reset)
@@ -158,13 +186,16 @@ FarmConnect_Group13/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/          # Axios clients per role
-│   │   ├── components/   # Shared UI (cards, layout, grid location picker, ...)
+│   │   ├── components/   # Shared UI (cards, layout, FeatureGuide tour overlay, ...)
 │   │   ├── context/      # Auth + role context
 │   │   ├── dashboards/   # Buyer / Farmer / Transporter dashboards
 │   │   ├── hooks/        # useAuth, useFarmerData, WebSocket chat
 │   │   ├── pages/        # Login, Register, DashboardRouter, NotFound
 │   │   ├── routes/       # AppRoutes
-│   │   └── styles/       # Tailwind + globals
+│   │   ├── styles/       # Tailwind, globals, tour animations
+│   │   └── utils/        # constants, formatters, tourSteps
+│   ├── .eslintrc.cjs
+│   ├── .eslintignore
 │   └── package.json
 ├── docs/                 # Architecture, API working, setup, testing guides
 └── README.md

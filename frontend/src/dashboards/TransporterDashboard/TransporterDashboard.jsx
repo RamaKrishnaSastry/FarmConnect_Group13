@@ -72,6 +72,7 @@ export const TransporterDashboard = () => {
           <Card>
             <CardHeader title="Available Deliveries" subtitle="Open assignments you can accept" />
             <input
+              id="transp-filter"
               type="text"
               value={locationFilter}
               onChange={(event) => setLocationFilter(event.target.value)}
@@ -81,8 +82,8 @@ export const TransporterDashboard = () => {
             {filteredAvailable.length === 0 ? (
               <p className="text-gray-600">No deliveries are currently available.</p>
             ) : (
-              <div className="space-y-3">
-                {filteredAvailable.map((delivery) => (
+              <div id="transp-available" className="space-y-3">
+                {filteredAvailable.map((delivery, index) => (
                   <div key={delivery.id} className="rounded-xl border border-green-100 bg-green-50/50 p-4">
                     <div className="flex justify-between items-center">
                       <div>
@@ -91,6 +92,7 @@ export const TransporterDashboard = () => {
                         <p className="text-sm text-gray-600">Farmer: {delivery.farmer_name || 'Unknown'}</p>
                       </div>
                       <button
+                        id={index === 0 ? 'transp-accept-btn' : undefined}
                         onClick={() => handleAccept(delivery.id)}
                         className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-800"
                       >
@@ -126,8 +128,8 @@ export const TransporterDashboard = () => {
             {filteredMy.length === 0 ? (
               <p className="text-gray-600">You have not accepted any deliveries yet.</p>
             ) : (
-              <div className="space-y-3">
-                {filteredMy.map((delivery) => (
+              <div id="transp-mine" className="space-y-3">
+                {filteredMy.map((delivery, index) => (
                   <div key={delivery.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="flex justify-between items-center">
                       <div>
@@ -149,6 +151,7 @@ export const TransporterDashboard = () => {
                       </a>
                       {delivery.status !== 'delivered' && (
                         <button
+                          id={index === 0 ? 'transp-complete-btn' : undefined}
                           onClick={() => handleComplete(delivery.id)}
                           className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-800"
                         >

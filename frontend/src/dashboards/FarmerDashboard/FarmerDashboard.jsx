@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useFarmerData } from '../../hooks/useFarmerData';
-import { Loader } from '../../components/common/Loader';
-import { StatsOverview } from '../../components/charts/StatsOverview';
 import { FarmerProfileCard } from './FarmerProfileCard';
 import { ProduceList } from './ProduceList';
 import { BuyerRequestList } from './BuyerRequestList';
@@ -47,11 +45,18 @@ export const FarmerDashboard = () => {
     );
   }
 
+  const avgRating = ratings.length
+    ? (ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length).toFixed(1)
+    : '0';
+
+  const completedRequests = requests.filter(r => r.status === 'completed');
+  const totalSales = completedRequests.reduce((sum, r) => sum + (Number(r.offered_price) || 0), 0);
+
   const stats = [
     { label: 'Active Listings', value: produce.length, icon: '🌾', color: 'bg-green-50' },
     { label: 'Pending Requests', value: requests.filter(r => r.status === 'pending').length, icon: '📋', color: 'bg-blue-50' },
     { label: 'In Transit', value: deliveries.filter(d => d.status === 'in_transit').length, icon: '🚚', color: 'bg-amber-50' },
-    { label: 'Average Rating', value: '4.5', icon: '⭐', color: 'bg-purple-50' },
+    { label: 'Average Rating', value: avgRating, icon: '⭐', color: 'bg-purple-50' },
   ];
 
   const tabs = [
@@ -70,7 +75,7 @@ export const FarmerDashboard = () => {
         <p className="mt-2 text-sm text-green-50">Manage your produce, track deliveries, and connect with buyers.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div id="farmer-stats" className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className={`${stat.color} rounded-2xl border border-green-100 p-6 shadow-sm transition hover:shadow-md`}>
             <div className="mb-2 text-3xl">{stat.icon}</div>
@@ -85,6 +90,7 @@ export const FarmerDashboard = () => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              id={`farmer-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap border-b-2 px-6 py-4 text-sm font-medium transition ${
                 activeTab === tab.id
@@ -106,15 +112,15 @@ export const FarmerDashboard = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Total Sales</span>
-                    <span className="font-bold text-green-700">$2,450</span>
+                    <span className="font-bold text-green-700">${totalSales.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Completed Orders</span>
-                    <span className="font-bold text-blue-700">12</span>
+                    <span className="font-bold text-blue-700">{completedRequests.length}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3">
                     <span className="text-gray-700">Buyer Rating</span>
-                    <span className="font-bold text-yellow-600">4.8/5 ⭐</span>
+                    <span className="font-bold text-yellow-600">{avgRating}/5 ⭐</span>
                   </div>
                 </div>
               </div>

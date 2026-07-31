@@ -50,7 +50,7 @@ export const ChatSection = ({ requests }) => {
   const selectedReq = requests.find((r) => r.id === selectedRequest);
 
   return (
-    <div className="space-y-6">
+    <div id="chat-section" className="space-y-6">
       <Card>
         <CardHeader title="Buyer Communication" />
       </Card>

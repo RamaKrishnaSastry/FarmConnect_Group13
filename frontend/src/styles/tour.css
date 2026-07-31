@@ -1,0 +1,112 @@
+/* ===== FarmConnect Feature Guide (tour) styles ===== */
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  animation: tour-overlay-in 0.35s ease both;
+}
+
+@keyframes tour-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.tour-spotlight {
+  position: fixed;
+  z-index: 201;
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(6, 40, 26, 0.65);
+  transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.tour-spotlight::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  border: 2px solid rgba(16, 185, 129, 0.75);
+  animation: tour-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tour-ring {
+  0%   { transform: scale(0.96); opacity: 0.9; }
+  70%  { transform: scale(1.04); opacity: 0; }
+  100% { transform: scale(1.04); opacity: 0; }
+}
+
+.tour-card {
+  position: fixed;
+  z-index: 202;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(2, 44, 26, 0.28);
+  animation: tour-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
+@keyframes tour-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tour-card-out {
+  animation: tour-card-out 0.25s ease-in both;
+}
+
+@keyframes tour-card-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(14px) scale(0.97); }
+}
+
+.tour-progress {
+  height: 5px;
+  background: #d1fae5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tour-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.tour-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d1d5db;
+  transition: all 0.3s ease;
+}
+
+.tour-dot.active {
+  width: 20px;
+  background: #10b981;
+}
+
+.tour-tip-arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  transform: rotate(45deg);
+  box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.06);
+}

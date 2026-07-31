@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ProduceCard } from './ProduceCard';
 import { AddProduceForm } from './AddProduceForm';
 import * as farmerApi from '../../api/farmerApi';
-import { Card, CardHeader } from '../../components/common/Card';
+import { Card } from '../../components/common/Card';
 
 export const ProduceList = ({ produce, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -31,12 +31,13 @@ export const ProduceList = ({ produce, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-green-100 bg-green-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div id="produce-section" className="flex flex-col gap-4 rounded-2xl border border-green-100 bg-green-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">My Produce Listings</h2>
           <p className="text-sm text-gray-600">You have {produce.length} active listings</p>
         </div>
         <button
+          id="add-produce-btn"
           onClick={() => { setShowForm(!showForm); setEditingId(null); }}
           className="rounded-lg bg-green-700 px-6 py-3 font-medium text-white transition hover:bg-green-800"
         >

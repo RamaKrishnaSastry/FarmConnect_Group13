@@ -169,12 +169,12 @@ INSERT INTO produce_photos (produce_id, photo_url) VALUES
 
 -- Purchase requests (buyer_id = 2)
 INSERT INTO purchase_requests (produce_id, buyer_id, requested_quantity, offered_price, status, buyer_note) VALUES
-(1, 2, 50, 250.00, 'PENDING',  'Need delivery by end of week'),
-(2, 2, 30,  90.00, 'APPROVED', 'Regular weekly order'),
-(3, 2, 20,  30.00, 'APPROVED', 'For weekend market stall');
+(1, 2, 50, 250.00, 'PENDING',   'Need delivery by end of week'),
+(2, 2, 30,  90.00, 'APPROVED',  'Regular weekly order'),
+(3, 2, 20,  30.00, 'COMPLETED', 'For weekend market stall');
 
 -- Deliveries
--- delivery 1: carrots request -> SHIPPED, unassigned (visible in transporter dashboard)
+-- delivery 1: carrots request -> SHIPPED, unassigned (visible in transporter dashboard to accept)
 -- delivery 2: corn request    -> DELIVERED, assigned to transporter (history)
 INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, delivery_address,
                         pickup_latitude, pickup_longitude, delivery_latitude, delivery_longitude,
@@ -182,13 +182,16 @@ INSERT INTO deliveries (request_id, transporter_id, status, pickup_address, deli
 (2, NULL, 'SHIPPED',   '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL', 39.78170000, -89.65010000, 41.87810000, -87.62980000, 120.00, 180, NULL, NULL),
 (3, 3,    'DELIVERED', '123 Farm Lane, Springfield, IL', '456 Market St, Chicago, IL', 39.78170000, -89.65010000, 41.87810000, -87.62980000, 120.00, 180, NOW(), NOW());
 
--- Ratings (buyer rates farmer's product on request 1)
+-- Ratings (buyer rates farmer on product quality + delivery experience)
 INSERT INTO ratings (request_id, buyer_id, rated_user_id, rating_type, rating, review) VALUES
-(1, 2, 1, 'PRODUCT', 5, 'Excellent quality tomatoes! Very fresh and perfect color.');
+(1, 2, 1, 'PRODUCT', 5, 'Excellent quality tomatoes! Very fresh and perfect color.'),
+(3, 2, 1, 'DELIVERY', 5, 'Fast and careful delivery. The corn arrived in perfect condition.');
 
--- Chat (farmer -> buyer on request 1)
+-- Chat (farmer <-> buyer threads on requests 1 and 2)
 INSERT INTO chat_messages (request_id, sender_id, receiver_id, message) VALUES
-(1, 1, 2, 'Hi! Your tomatoes are ready. Let me know if you need any details.');
+(1, 1, 2, 'Hi! Your tomatoes are ready. Let me know if you need any details.'),
+(2, 2, 1, 'Hi! Are the carrots in stock this week?'),
+(2, 1, 2, 'Yes, 50kg ready. I have approved your request.');
 
 -- ============================================================
 -- VERIFY

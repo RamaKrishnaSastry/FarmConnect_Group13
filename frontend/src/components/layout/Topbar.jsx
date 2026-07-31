@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
-export const Topbar = () => {
+export const Topbar = ({ onStartTour = () => {} }) => {
   const { user, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -24,6 +24,13 @@ export const Topbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={onStartTour}
+            className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-700 transition hover:bg-green-100"
+          >
+            🎬 Tour
+          </button>
+
           <button className="relative rounded-full p-2 text-gray-600 transition hover:bg-green-50 hover:text-green-700">
             🔔
             <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
@@ -48,7 +55,15 @@ export const Topbar = () => {
                 </div>
                 <button className="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50">👤 My Profile</button>
                 <button className="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50">⚙️ Settings</button>
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50">❓ Help</button>
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    onStartTour();
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  ❓ Help (take a tour)
+                </button>
                 <hr className="my-2" />
                 <button
                   onClick={handleLogout}

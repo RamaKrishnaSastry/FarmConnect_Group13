@@ -6,6 +6,7 @@ import { getDashboardPath } from '../utils/constants';
 const DEMO_ACCOUNTS = [
   { role: 'Farmer', email: 'farmer@farmconnect.com', password: 'password' },
   { role: 'Buyer', email: 'buyer@farmconnect.com', password: 'password' },
+  { role: 'Transporter', email: 'transporter@farmconnect.com', password: 'password' },
 ];
 
 export const LoginPage = () => {
