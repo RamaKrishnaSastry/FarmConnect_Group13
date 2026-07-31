@@ -1,5 +1,4 @@
 import { RatingCard } from './RatingCard';
-import { Card, CardHeader } from '../../components/common/Card';
 
 export const RatingList = ({ ratings }) => {
   const avgRating = ratings.length > 0
@@ -8,7 +7,7 @@ export const RatingList = ({ ratings }) => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
+      <div id="ratings-section" className="rounded-2xl border border-green-100 bg-green-50/70 p-5">
         <h2 className="text-2xl font-bold text-gray-900">My Ratings</h2>
         <p className="mt-1 text-sm text-gray-600">Average: {avgRating} ⭐</p>
       </div>

@@ -172,11 +172,15 @@ export const BuyerDashboard = () => {
             {availableProduce.length === 0 ? (
               <p className="text-gray-600">No produce is currently available.</p>
             ) : (
-              <div className="space-y-3">
-                {availableProduce.map((item) => {
+              <div id="buyer-available" className="space-y-3">
+                {availableProduce.map((item, index) => {
                   const draft = requestDrafts[item.id] || {};
                   return (
-                    <div key={item.id} className="rounded-xl border border-green-100 bg-green-50/50 p-4">
+                    <div
+                      key={item.id}
+                      id={index === 0 ? 'buyer-request-form' : undefined}
+                      className="rounded-xl border border-green-100 bg-green-50/50 p-4"
+                    >
                       <div className="flex justify-between items-center">
                         <div>
                           <h4 className="font-semibold text-gray-900">{item.name}</h4>
@@ -233,8 +237,8 @@ export const BuyerDashboard = () => {
             {myRequests.length === 0 ? (
               <p className="text-gray-600">You have not made any purchase requests yet.</p>
             ) : (
-              <div className="space-y-3">
-                {myRequests.map((request) => {
+              <div id="buyer-my-requests" className="space-y-3">
+                {myRequests.map((request, reqIndex) => {
                   const productKey = `${request.id}-PRODUCT`;
                   const deliveryKey = `${request.id}-DELIVERY`;
                   return (
@@ -249,7 +253,10 @@ export const BuyerDashboard = () => {
                         </span>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Quantity: {request.requested_quantity}</p>
-                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                      <div
+                        id={reqIndex === 0 ? 'buyer-rating-box' : undefined}
+                        className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3"
+                      >
                         <div className="mb-3 flex items-center justify-between">
                           <p className="text-sm font-semibold text-gray-800">Rate this experience</p>
                           <button
@@ -324,7 +331,7 @@ export const BuyerDashboard = () => {
               </div>
             )}
           </Card>
-          <Card>
+          <Card id="buyer-chat">
             <CardHeader title="Message Farmer" subtitle="Keep the conversation going for each request" />
             {myRequests.length === 0 ? (
               <p className="text-gray-600">Create a request to start a conversation with the farmer.</p>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatDateTime } from '../../utils/formatters';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/common/Card';
 

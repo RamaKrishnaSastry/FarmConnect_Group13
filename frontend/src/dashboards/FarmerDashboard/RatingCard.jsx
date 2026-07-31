@@ -43,7 +43,7 @@ export const RatingCard = ({ rating }) => {
           {rating.review && (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide mb-2">Review</p>
-              <p className="text-gray-900 text-sm italic">"{rating.review}"</p>
+              <p className="text-gray-900 text-sm italic">&ldquo;{rating.review}&rdquo;</p>
             </div>
           )}
 
